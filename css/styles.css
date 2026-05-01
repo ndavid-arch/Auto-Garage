@@ -1,0 +1,538 @@
+/* ===========================================
+   AutoTrack — Car Repair Tracker Styles
+   =========================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+}
+
+/* Page navigation */
+.page { display: none; }
+.page.active { display: block; }
+
+/* Sidebar nav */
+.nav-link.active { background: #1e40af; color: white; }
+
+/* Status badges */
+.status-badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status-completed { background: #dcfce7; color: #166534; }
+.status-progress  { background: #fef9c3; color: #854d0e; }
+.status-pending   { background: #f1f5f9; color: #475569; }
+
+/* Cards */
+.card {
+  transition: transform .15s, box-shadow .15s;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,.10);
+}
+
+/* Form elements */
+input, select, textarea {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border .2s;
+  font-family: inherit;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+}
+
+/* Buttons */
+.btn-primary {
+  background: #2563eb;
+  color: white;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .2s;
+  border: none;
+}
+.btn-primary:hover { background: #1d4ed8; }
+
+.btn-secondary {
+  background: #f1f5f9;
+  color: #334155;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .2s;
+  border: none;
+}
+.btn-secondary:hover { background: #e2e8f0; }
+
+.btn-danger {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+}
+.btn-danger:hover { background: #fecaca; }
+
+.btn-green {
+  background: #22c55e;
+  color: white;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+}
+.btn-green:hover { background: #16a34a; }
+
+/* Sidebar */
+.sidebar-icon { width: 20px; height: 20px; }
+
+/* Timeline */
+.timeline-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2563eb;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.timeline-line {
+  width: 2px;
+  background: #e2e8f0;
+  flex-grow: 1;
+  margin-left: 5px;
+}
+
+/* Allow main-content to shrink inside flex body — fixes mobile overflow
+   from inner elements with min-width (tables, etc.). */
+.main-content {
+  min-width: 0;
+}
+
+/* Mobile menu button — hidden on desktop */
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 30;
+  background: #1f2937;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  transition: opacity .2s, transform .2s;
+}
+/* Hide hamburger when sidebar is open (so it doesn't overlap) */
+.sidebar-open .mobile-menu-btn {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(.85);
+}
+
+/* Close button inside sidebar header (mobile only) */
+.sidebar-close-btn {
+  display: none;
+  background: rgba(255,255,255,.08);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s;
+}
+.sidebar-close-btn:hover { background: rgba(255,255,255,.18); }
+
+/* Sidebar overlay (mobile) */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 15;
+}
+.sidebar-overlay.show { display: block; }
+
+/* Tables become scrollable on mobile */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ===========================================
+   RESPONSIVE BREAKPOINTS
+   =========================================== */
+
+/* Tablet — up to 1024px */
+@media (max-width: 1024px) {
+  .stats-grid     { grid-template-columns: repeat(2, 1fr) !important; }
+  .cars-grid      { grid-template-columns: repeat(2, 1fr) !important; }
+  .car-detail-grid { grid-template-columns: 1fr !important; }
+  .car-detail-actions {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+  }
+  .car-detail-actions button { flex: 1; min-width: 140px; }
+}
+
+/* Mobile — up to 768px */
+@media (max-width: 768px) {
+  .mobile-menu-btn { display: block; }
+
+  /* Sidebar slides in/out */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    z-index: 20;
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  /* Main content takes full width */
+  .main-content {
+    margin-left: 0 !important;
+    padding: 70px 16px 24px !important;
+  }
+
+  /* Stack everything single column */
+  .stats-grid     { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .cars-grid      { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .form-grid-2    { grid-template-columns: 1fr !important; }
+  .form-grid-3    { grid-template-columns: 1fr !important; }
+  .repair-form-grid { grid-template-columns: 1fr !important; }
+
+  /* Reset Tailwind col-span-* so grid items don't recreate columns on mobile */
+  .form-grid-2 > [class*="col-span"],
+  .form-grid-3 > [class*="col-span"],
+  .repair-form-grid > [class*="col-span"] {
+    grid-column: auto !important;
+  }
+
+  /* Headings smaller */
+  h1.page-title { font-size: 1.4rem !important; }
+
+  /* Filter bar wraps */
+  .filter-bar { flex-wrap: wrap; }
+  .filter-bar input,
+  .filter-bar select { width: 100% !important; max-width: none !important; }
+
+  /* Top bar of pages stacks */
+  .page-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+  .page-header button { width: 100%; justify-content: center; }
+
+  /* Repair item table — smaller text */
+  #repairTable { font-size: 12px; }
+  #repairTable input, #repairTable select { font-size: 12px; padding: 5px 7px; }
+
+  /* PDF toast */
+  #pdfToast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+
+  /* Show close button inside sidebar on mobile */
+  .sidebar-close-btn { display: flex; }
+}
+
+/* Small phones — up to 480px */
+@media (max-width: 480px) {
+  .main-content { padding: 70px 12px 24px !important; }
+  .card-padded { padding: 16px !important; }
+  h1.page-title { font-size: 1.2rem !important; }
+  .stat-card-value { font-size: 1.6rem !important; }
+}
+
+/* Print styles (when user prints page) */
+@media print {
+  .sidebar, .mobile-menu-btn, .no-print { display: none !important; }
+  .main-content { margin-left: 0 !important; padding: 0 !important; }
+}
+
+/* ===========================================
+   AUTH SHELL (landing / signup / login)
+   =========================================== */
+.app-shell, .auth-shell { width: 100%; }
+.app-shell.hidden, .auth-shell.hidden { display: none !important; }
+
+.auth-shell {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.auth-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,.08) 0, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(255,255,255,.08) 0, transparent 40%);
+  pointer-events: none;
+}
+
+.auth-page { display: none; width: 100%; max-width: 460px; position: relative; z-index: 1; }
+.auth-page.active { display: block; animation: fadeUp .35s ease; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.auth-card {
+  background: white;
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow: 0 25px 60px rgba(0,0,0,.25);
+}
+.auth-logo {
+  width: 56px; height: 56px;
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.auth-title { font-size: 26px; font-weight: 700; color: #0f172a; margin: 0 0 6px; }
+.auth-subtitle { color: #64748b; font-size: 14px; margin: 0 0 24px; }
+
+.auth-link {
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.auth-link:hover { text-decoration: underline; }
+
+.auth-error {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 14px;
+  display: none;
+}
+.auth-error.show { display: block; }
+
+.role-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 18px;
+}
+.role-tab {
+  background: transparent;
+  border: none;
+  padding: 9px 8px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: background .15s, color .15s, box-shadow .15s;
+}
+.role-tab.active {
+  background: white;
+  color: #1e40af;
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+
+.auth-field { margin-bottom: 14px; }
+.auth-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  letter-spacing: .03em;
+}
+
+.btn-full { width: 100%; padding: 12px; font-size: 15px; }
+
+/* Landing hero */
+.landing-hero {
+  text-align: center;
+  color: white;
+  max-width: 520px;
+}
+.landing-hero h1 {
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  margin: 18px 0 12px;
+  line-height: 1.1;
+}
+.landing-hero p {
+  font-size: 17px;
+  opacity: .9;
+  line-height: 1.5;
+  margin-bottom: 28px;
+}
+.landing-cta {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.landing-cta .btn-primary {
+  background: white;
+  color: #1e40af;
+  padding: 12px 28px;
+  font-size: 15px;
+}
+.landing-cta .btn-primary:hover { background: #f1f5f9; }
+.landing-cta .btn-secondary {
+  background: rgba(255,255,255,.15);
+  color: white;
+  padding: 12px 28px;
+  font-size: 15px;
+  border: 1px solid rgba(255,255,255,.3);
+}
+.landing-cta .btn-secondary:hover { background: rgba(255,255,255,.25); }
+
+.landing-features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 36px;
+  text-align: left;
+}
+.feature-card {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 12px;
+  padding: 14px;
+  color: white;
+}
+.feature-card p:first-child { font-weight: 600; font-size: 14px; margin: 0 0 4px; }
+.feature-card p:last-child  { font-size: 12px; opacity: .8; margin: 0; }
+
+@media (max-width: 600px) {
+  .landing-hero h1 { font-size: 32px; }
+  .landing-hero p { font-size: 15px; }
+  .landing-features { grid-template-columns: 1fr; }
+  .auth-card { padding: 28px 22px; }
+}
+
+/* ===========================================
+   SPLASH SCREEN (after login)
+   =========================================== */
+.splash {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: white;
+  transition: opacity .4s ease;
+}
+.splash.show  { display: flex; opacity: 1; }
+.splash.fade  { opacity: 0; }
+.splash-logo {
+  width: 80px; height: 80px;
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.06); opacity: .85; }
+}
+.splash p:first-of-type {
+  font-size: 14px;
+  opacity: .8;
+  margin: 0 0 8px;
+  letter-spacing: .05em;
+}
+.splash h1 {
+  font-size: 36px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -.02em;
+  text-align: center;
+  padding: 0 20px;
+}
+
+/* ===========================================
+   STORE INFO IN SIDEBAR FOOTER
+   =========================================== */
+.store-name-display { font-weight: 700; }
+.logout-btn {
+  margin-top: 8px;
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.7);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.logout-btn:hover {
+  background: rgba(239,68,68,.15);
+  color: #fca5a5;
+  border-color: rgba(239,68,68,.3);
+}
+
+/* Dashboard greeting strip */
+.greeting-strip {
+  background: linear-gradient(135deg, #eef2ff, #ddd6fe);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.greeting-strip .wave { font-size: 22px; }
+.greeting-strip p { margin: 0; font-size: 14px; color: #1e293b; }
+.greeting-strip strong { color: #1e3a8a; }

@@ -1,0 +1,29 @@
+# Local Claude Code preview-server config (machine-specific, not needed on GitHub)
+.claude/
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor folders
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Future: if you add a build step
+node_modules/
+dist/
+build/
+
+# Local secrets — if you ever accidentally drop a .env here, this saves you
+.env
+.env.local
+*.pem
+id_rsa
+id_rsa.pub

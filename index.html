@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5"/>
+  <meta name="description" content="AutoTrack — track car repairs, parts replaced and generate PDF reports."/>
+  <meta name="theme-color" content="#1f2937"/>
+  <title>AutoTrack — Car Repair Tracker</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- jsPDF for client-side PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Supabase JS SDK (must load before js/db.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Our styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+<!-- ============================================
+     SPLASH SCREEN (shown briefly after login)
+     ============================================ -->
+<div id="splash" class="splash">
+  <div class="splash-logo">
+    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0M3 17V7a2 2 0 012-2h8l4 4v8"/>
+    </svg>
+  </div>
+  <p>WELCOME TO</p>
+  <h1 id="splashStoreName">Your Garage</h1>
+</div>
+
+<!-- ============================================
+     AUTH SHELL (landing / signup / login)
+     ============================================ -->
+<div id="authShell" class="auth-shell hidden">
+
+  <!-- Landing -->
+  <div id="auth-landing" class="auth-page">
+    <div class="landing-hero">
+      <div class="auth-logo" style="margin: 0 auto;">
+        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0M3 17V7a2 2 0 012-2h8l4 4v8"/>
+        </svg>
+      </div>
+      <h1>AutoTrack</h1>
+      <p>Track repairs, manage parts, and print professional PDF reports — for your shop, your customers, your records.</p>
+      <div class="landing-cta">
+        <button onclick="showAuthPage('signup')" class="btn-primary">Sign Up</button>
+        <button onclick="showAuthPage('login')" class="btn-secondary">Log In</button>
+      </div>
+      <div class="landing-features">
+        <div class="feature-card">
+          <p>Multi-Vehicle</p>
+          <p>Track every car your shop services in one place.</p>
+        </div>
+        <div class="feature-card">
+          <p>PDF Reports</p>
+          <p>One-click branded reports for every repair.</p>
+        </div>
+        <div class="feature-card">
+          <p>Repair History</p>
+          <p>Full timeline of parts replaced for each vehicle.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Signup -->
+  <div id="auth-signup" class="auth-page">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0M3 17V7a2 2 0 012-2h8l4 4v8"/>
+        </svg>
+      </div>
+      <h2 class="auth-title">Create an Account</h2>
+      <p class="auth-subtitle">Choose what kind of account you need.</p>
+
+      <!-- Role toggle -->
+      <div class="role-toggle" role="tablist">
+        <button type="button" class="role-tab active" data-role="garage" onclick="selectRole('signup','garage')">
+          🏭 I'm a Garage
+        </button>
+        <button type="button" class="role-tab" data-role="customer" onclick="selectRole('signup','customer')">
+          🚗 I'm a Car Owner
+        </button>
+      </div>
+
+      <div id="signupError" class="auth-error"></div>
+
+      <!-- GARAGE form -->
+      <form id="signupFormGarage" class="signup-form-role" data-role="garage" onsubmit="handleSignup(event,'garage')">
+        <div class="auth-field">
+          <label>Garage / Store Name *</label>
+          <input type="text" name="storeName" placeholder="e.g. Kigali Auto Repair" required/>
+        </div>
+        <div class="auth-field">
+          <label>Owner Name *</label>
+          <input type="text" name="ownerName" placeholder="Full name" required/>
+        </div>
+        <div class="auth-field">
+          <label>Email *</label>
+          <input type="email" name="email" placeholder="you@example.com" required/>
+        </div>
+        <div class="auth-field">
+          <label>Phone</label>
+          <input type="tel" name="phone" placeholder="+250 788 000 000"/>
+        </div>
+        <div class="auth-field">
+          <label>Password * (min 6 chars)</label>
+          <input type="password" name="password" placeholder="••••••••" required minlength="6"/>
+        </div>
+        <button type="submit" class="btn-primary btn-full" style="margin-top:6px;">Create Garage Account</button>
+      </form>
+
+      <!-- CUSTOMER form -->
+      <form id="signupFormCustomer" class="signup-form-role" data-role="customer" style="display:none;" onsubmit="handleSignup(event,'customer')">
+        <div class="auth-field">
+          <label>Your Full Name *</label>
+          <input type="text" name="fullName" placeholder="e.g. John Doe" required/>
+        </div>
+        <div class="auth-field">
+          <label>Email *</label>
+          <input type="email" name="email" placeholder="you@example.com" required/>
+          <p style="font-size:11px;color:#64748b;margin:6px 0 0;">
+            Use the same email your garage has on file — your cars will appear automatically.
+          </p>
+        </div>
+        <div class="auth-field">
+          <label>Phone</label>
+          <input type="tel" name="phone" placeholder="+250 788 000 000"/>
+        </div>
+        <div class="auth-field">
+          <label>Password * (min 6 chars)</label>
+          <input type="password" name="password" placeholder="••••••••" required minlength="6"/>
+        </div>
+        <button type="submit" class="btn-primary btn-full" style="margin-top:6px;">Create Customer Account</button>
+      </form>
+
+      <p style="text-align:center;margin:18px 0 0;font-size:13px;color:#64748b;">
+        Already have an account? <span class="auth-link" onclick="showAuthPage('login')">Log in</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- Login -->
+  <div id="auth-login" class="auth-page">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0M3 17V7a2 2 0 012-2h8l4 4v8"/>
+        </svg>
+      </div>
+      <h2 class="auth-title">Welcome Back</h2>
+      <p class="auth-subtitle">Log in to your garage account.</p>
+
+      <!-- Role toggle -->
+      <div class="role-toggle" role="tablist">
+        <button type="button" class="role-tab active" data-role="garage" onclick="selectRole('login','garage')">
+          🏭 Garage
+        </button>
+        <button type="button" class="role-tab" data-role="customer" onclick="selectRole('login','customer')">
+          🚗 Car Owner
+        </button>
+      </div>
+
+      <div id="loginError" class="auth-error"></div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="auth-field">
+          <label>Email</label>
+          <input type="email" name="email" placeholder="you@example.com" required/>
+        </div>
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" name="password" placeholder="••••••••" required/>
+        </div>
+
+        <button type="submit" class="btn-primary btn-full" style="margin-top:6px;">Log In</button>
+      </form>
+
+      <p style="text-align:center;margin:18px 0 0;font-size:13px;color:#64748b;">
+        New here? <span class="auth-link" onclick="showAuthPage('signup')">Create an account</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     APP SHELL (after login)
+     ============================================ -->
+<div id="appShell" class="app-shell hidden" style="display:flex;">
+
+<!-- ===== Mobile menu button ===== -->
+<button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open menu">
+  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+  </svg>
+</button>
+
+<!-- Mobile overlay -->
+<div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+<!-- ===== SIDEBAR ===== -->
+<aside id="sidebar" class="sidebar w-60 bg-gray-900 text-white flex flex-col fixed h-full z-20">
+  <div class="px-6 py-5 border-b border-gray-700">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0M3 17V7a2 2 0 012-2h8l4 4v8"/>
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-sm store-name-display" id="sidebarStoreName">AutoTrack</p>
+        <p class="text-xs text-gray-400">Repair Management</p>
+      </div>
+      <button class="sidebar-close-btn" onclick="closeSidebar()" aria-label="Close menu">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <nav class="flex-1 px-3 py-4 space-y-1">
+    <!-- Garage-only nav -->
+    <button onclick="showPage('dashboard')" class="nav-link active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors" data-page="dashboard" data-roles="garage">
+      <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
+      Dashboard
+    </button>
+    <button onclick="showPage('cars')" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors" data-page="cars" data-roles="garage">
+      <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0M3 17V9l3-6h12l3 6v8"/></svg>
+      All Vehicles
+    </button>
+    <button onclick="showPage('repairs')" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors" data-page="repairs" data-roles="garage">
+      <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
+      Repairs
+    </button>
+    <button onclick="openGarageAddVehicle()" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors" data-page="addcar" data-roles="garage">
+      <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="16" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="12" x2="16" y2="12" stroke-width="2" stroke-linecap="round"/></svg>
+      Add Vehicle
+    </button>
+
+    <!-- Customer-only nav -->
+    <button onclick="showPage('customer-dashboard')" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors" data-page="customer-dashboard" data-roles="customer" style="display:none;">
+      <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
+      My Dashboard
+    </button>
+    <button onclick="showPage('customer-vehicles')" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors" data-page="customer-vehicles" data-roles="customer" style="display:none;">
+      <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0M3 17V9l3-6h12l3 6v8"/></svg>
+      My Vehicles
+    </button>
+    <button onclick="showPage('customer-alerts')" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors" data-page="customer-alerts" data-roles="customer" style="display:none;">
+      <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.4-1.4A7 7 0 0019 11V8a7 7 0 10-14 0v3c0 1.7-.6 3.3-1.6 4.6L2 17h5m8 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      Alerts <span id="alertsBadge" class="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5" style="display:none;">0</span>
+    </button>
+  </nav>
+
+  <div class="px-4 py-4 border-t border-gray-700">
+    <div class="flex items-center gap-3">
+      <div id="sidebarAvatar" class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold flex-shrink-0">JM</div>
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-medium truncate" id="sidebarOwnerName">Owner</p>
+        <p class="text-xs text-gray-400">Admin</p>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="handleLogout()">Log Out</button>
+  </div>
+</aside>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content ml-60 flex-1 p-8">
+
+  <!-- ===== DASHBOARD ===== -->
+  <div id="page-dashboard" class="page active">
+    <div class="greeting-strip">
+      <span class="wave">👋</span>
+      <p>Welcome back, <strong id="greetingStoreName">your garage</strong> — here's today's overview.</p>
+    </div>
+    <div class="mb-8">
+      <h1 class="page-title text-2xl font-bold text-gray-900">Dashboard</h1>
+      <p class="text-gray-500 text-sm mt-1">Your shop at a glance.</p>
+    </div>
+
+    <div class="stats-grid grid grid-cols-4 gap-5 mb-8">
+      <div class="card card-padded bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-sm text-gray-500 font-medium">Total Cars</p>
+          <div class="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0M3 17V9l3-6h12l3 6v8"/></svg>
+          </div>
+        </div>
+        <p class="stat-card-value text-3xl font-bold text-gray-900">24</p>
+        <p class="text-xs text-green-600 mt-1">+3 this month</p>
+      </div>
+      <div class="card card-padded bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-sm text-gray-500 font-medium">Open Repairs</p>
+          <div class="w-9 h-9 bg-yellow-50 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+        </div>
+        <p class="stat-card-value text-3xl font-bold text-gray-900">7</p>
+        <p class="text-xs text-yellow-600 mt-1">In progress</p>
+      </div>
+      <div class="card card-padded bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-sm text-gray-500 font-medium">Completed</p>
+          <div class="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+        </div>
+        <p class="stat-card-value text-3xl font-bold text-gray-900">58</p>
+        <p class="text-xs text-green-600 mt-1">All time</p>
+      </div>
+      <div class="card card-padded bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-sm text-gray-500 font-medium">Revenue</p>
+          <div class="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+        </div>
+        <p class="stat-card-value text-3xl font-bold text-gray-900">$4,280</p>
+        <p class="text-xs text-purple-600 mt-1">This month</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-8">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="font-semibold text-gray-900">Recent Repairs</h2>
+        <button onclick="showPage('repairs')" class="text-sm text-blue-600 font-medium hover:underline">View all</button>
+      </div>
+      <div class="table-wrap">
+        <table class="w-full text-sm" style="min-width:640px">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Car</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Plate</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Service</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Cost</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            <tr class="hover:bg-gray-50 cursor-pointer" onclick="showPage('cardetail')">
+              <td class="px-6 py-4 font-medium">Toyota Corolla</td>
+              <td class="px-6 py-4 text-gray-500">RAB 123A</td>
+              <td class="px-6 py-4">Oil Change + Filter</td>
+              <td class="px-6 py-4 text-gray-500">Apr 25, 2026</td>
+              <td class="px-6 py-4 font-semibold">$85</td>
+              <td class="px-6 py-4"><span class="status-badge status-completed">Completed</span></td>
+            </tr>
+            <tr class="hover:bg-gray-50 cursor-pointer" onclick="showPage('cardetail')">
+              <td class="px-6 py-4 font-medium">Honda CR-V</td>
+              <td class="px-6 py-4 text-gray-500">RAC 456B</td>
+              <td class="px-6 py-4">Brake Pads Replacement</td>
+              <td class="px-6 py-4 text-gray-500">Apr 26, 2026</td>
+              <td class="px-6 py-4 font-semibold">$240</td>
+              <td class="px-6 py-4"><span class="status-badge status-progress">In Progress</span></td>
+            </tr>
+            <tr class="hover:bg-gray-50 cursor-pointer" onclick="showPage('cardetail')">
+              <td class="px-6 py-4 font-medium">Nissan X-Trail</td>
+              <td class="px-6 py-4 text-gray-500">RAD 789C</td>
+              <td class="px-6 py-4">Engine Tune-Up</td>
+              <td class="px-6 py-4 text-gray-500">Apr 27, 2026</td>
+              <td class="px-6 py-4 font-semibold">$320</td>
+              <td class="px-6 py-4"><span class="status-badge status-progress">In Progress</span></td>
+            </tr>
+            <tr class="hover:bg-gray-50 cursor-pointer" onclick="showPage('cardetail')">
+              <td class="px-6 py-4 font-medium">Toyota RAV4</td>
+              <td class="px-6 py-4 text-gray-500">RAE 321D</td>
+              <td class="px-6 py-4">Suspension Check</td>
+              <td class="px-6 py-4 text-gray-500">Apr 24, 2026</td>
+              <td class="px-6 py-4 font-semibold">$150</td>
+              <td class="px-6 py-4"><span class="status-badge status-completed">Completed</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== VEHICLES PAGE (garage) ===== -->
+  <div id="page-cars" class="page">
+    <div class="page-header flex items-center justify-between mb-8">
+      <div>
+        <h1 class="page-title text-2xl font-bold text-gray-900">All Vehicles</h1>
+        <p class="text-gray-500 text-sm mt-1" id="garageVehiclesSubtitle">0 vehicles registered</p>
+      </div>
+      <button onclick="openGarageAddVehicle()" class="btn-primary flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Vehicle
+      </button>
+    </div>
+
+    <div id="garageVehiclesGrid" class="cars-grid grid grid-cols-3 gap-5"></div>
+
+    <!-- Archived garage vehicles -->
+    <div id="garageArchivedSection" class="mt-10" style="display:none;">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase">Archived</h2>
+        <p class="text-xs text-gray-400" id="garageArchivedCount">0 archived vehicles</p>
+      </div>
+      <div id="garageArchivedGrid" class="cars-grid grid grid-cols-3 gap-5"></div>
+    </div>
+  </div>
+
+  <!-- ===== CAR DETAIL ===== -->
+  <div id="page-cardetail" class="page">
+    <div class="flex items-center gap-3 mb-6">
+      <button onclick="showPage('cars')" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div>
+        <h1 class="page-title text-2xl font-bold text-gray-900">Toyota Corolla</h1>
+        <p class="text-gray-500 text-sm">RAB 123A · 2019 · Silver · Owner: Kalisa Jean</p>
+      </div>
+    </div>
+
+    <div class="car-detail-grid grid grid-cols-3 gap-5 mb-8">
+      <div class="col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div class="grid grid-cols-3 gap-4 text-sm form-grid-3">
+          <div><p class="text-gray-400 text-xs mb-1">Brand / Make</p><p class="font-semibold">Toyota</p></div>
+          <div><p class="text-gray-400 text-xs mb-1">Model</p><p class="font-semibold">Corolla</p></div>
+          <div><p class="text-gray-400 text-xs mb-1">Year</p><p class="font-semibold">2019</p></div>
+          <div><p class="text-gray-400 text-xs mb-1">Color</p><p class="font-semibold">Silver</p></div>
+          <div><p class="text-gray-400 text-xs mb-1">Plate Number</p><p class="font-semibold bg-gray-100 inline-block px-2 py-0.5 rounded font-mono">RAB 123A</p></div>
+          <div><p class="text-gray-400 text-xs mb-1">VIN</p><p class="font-semibold text-gray-500">1HGBH41JXMN109186</p></div>
+          <div><p class="text-gray-400 text-xs mb-1">Owner</p><p class="font-semibold">Kalisa Jean</p></div>
+          <div><p class="text-gray-400 text-xs mb-1">Phone</p><p class="font-semibold">+250 788 123 456</p></div>
+          <div><p class="text-gray-400 text-xs mb-1">Last Mileage</p><p class="font-semibold">82,450 km</p></div>
+        </div>
+      </div>
+      <div class="car-detail-actions flex flex-col gap-3">
+        <button onclick="showPage('addrepair')" class="btn-primary text-center flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Log New Repair
+        </button>
+        <button onclick="generatePDF()" class="btn-green text-center flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Export PDF
+        </button>
+        <button class="btn-secondary text-center">Edit Car Info</button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <h2 class="font-semibold text-gray-900">Repair History (8 records)</h2>
+      </div>
+
+      <div class="p-6 space-y-0">
+        <div class="flex gap-4 pb-8">
+          <div class="flex flex-col items-center">
+            <div class="timeline-dot"></div>
+            <div class="timeline-line"></div>
+          </div>
+          <div class="flex-1 bg-gray-50 rounded-xl p-4 -mt-1">
+            <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
+              <div>
+                <p class="font-semibold text-gray-900">Oil Change + Air Filter Replacement</p>
+                <p class="text-xs text-gray-400 mt-0.5">Apr 25, 2026 · 82,450 km · Tech: Jean Mechanic</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="status-badge status-completed">Completed</span>
+                <span class="font-bold text-gray-900">$85</span>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="w-full text-xs border border-gray-200 rounded-lg overflow-hidden" style="min-width:480px">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Type</th>
+                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Description</th>
+                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Qty</th>
+                    <th class="px-3 py-2 text-right font-semibold text-gray-500">Cost</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                  <tr><td class="px-3 py-2 text-blue-600 font-medium">Part</td><td class="px-3 py-2">Engine Oil 5W-30 (4L)</td><td class="px-3 py-2">1</td><td class="px-3 py-2 text-right">$40</td></tr>
+                  <tr><td class="px-3 py-2 text-blue-600 font-medium">Part</td><td class="px-3 py-2">Air Filter (Denso)</td><td class="px-3 py-2">1</td><td class="px-3 py-2 text-right">$20</td></tr>
+                  <tr><td class="px-3 py-2 text-orange-600 font-medium">Labor</td><td class="px-3 py-2">Oil drain, refill & filter install</td><td class="px-3 py-2">1h</td><td class="px-3 py-2 text-right">$25</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button class="text-xs text-blue-600 hover:underline">Edit</button>
+              <button class="text-xs text-red-500 hover:underline">Delete</button>
+              <button onclick="generatePDF()" class="text-xs text-green-600 hover:underline ml-auto">Print PDF</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-4 pb-8">
+          <div class="flex flex-col items-center">
+            <div class="timeline-dot" style="background:#eab308"></div>
+            <div class="timeline-line"></div>
+          </div>
+          <div class="flex-1 bg-gray-50 rounded-xl p-4 -mt-1">
+            <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
+              <div>
+                <p class="font-semibold text-gray-900">Brake System Inspection</p>
+                <p class="text-xs text-gray-400 mt-0.5">Mar 10, 2026 · 79,200 km · Tech: Pierre Dufour</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="status-badge status-completed">Completed</span>
+                <span class="font-bold text-gray-900">$195</span>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="w-full text-xs border border-gray-200 rounded-lg overflow-hidden" style="min-width:480px">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Type</th>
+                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Description</th>
+                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Qty</th>
+                    <th class="px-3 py-2 text-right font-semibold text-gray-500">Cost</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                  <tr><td class="px-3 py-2 text-blue-600 font-medium">Part</td><td class="px-3 py-2">Front Brake Pads (Bosch)</td><td class="px-3 py-2">1 set</td><td class="px-3 py-2 text-right">$85</td></tr>
+                  <tr><td class="px-3 py-2 text-blue-600 font-medium">Part</td><td class="px-3 py-2">Brake Fluid DOT4</td><td class="px-3 py-2">1L</td><td class="px-3 py-2 text-right">$15</td></tr>
+                  <tr><td class="px-3 py-2 text-orange-600 font-medium">Labor</td><td class="px-3 py-2">Brake pad replacement + bleed</td><td class="px-3 py-2">2h</td><td class="px-3 py-2 text-right">$95</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button class="text-xs text-blue-600 hover:underline">Edit</button>
+              <button class="text-xs text-red-500 hover:underline">Delete</button>
+              <button onclick="generatePDF()" class="text-xs text-green-600 hover:underline ml-auto">Print PDF</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-4">
+          <div class="flex flex-col items-center">
+            <div class="timeline-dot" style="background:#10b981"></div>
+          </div>
+          <div class="flex-1 bg-gray-50 rounded-xl p-4 -mt-1">
+            <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
+              <div>
+                <p class="font-semibold text-gray-900">Spark Plugs + Timing Belt</p>
+                <p class="text-xs text-gray-400 mt-0.5">Jan 5, 2026 · 74,000 km · Tech: Jean Mechanic</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="status-badge status-completed">Completed</span>
+                <span class="font-bold text-gray-900">$310</span>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="w-full text-xs border border-gray-200 rounded-lg overflow-hidden" style="min-width:480px">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Type</th>
+                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Description</th>
+                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Qty</th>
+                    <th class="px-3 py-2 text-right font-semibold text-gray-500">Cost</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                  <tr><td class="px-3 py-2 text-blue-600 font-medium">Part</td><td class="px-3 py-2">NGK Spark Plugs</td><td class="px-3 py-2">4</td><td class="px-3 py-2 text-right">$60</td></tr>
+                  <tr><td class="px-3 py-2 text-blue-600 font-medium">Part</td><td class="px-3 py-2">Timing Belt Kit</td><td class="px-3 py-2">1</td><td class="px-3 py-2 text-right">$150</td></tr>
+                  <tr><td class="px-3 py-2 text-orange-600 font-medium">Labor</td><td class="px-3 py-2">Full engine service</td><td class="px-3 py-2">3h</td><td class="px-3 py-2 text-right">$100</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button class="text-xs text-blue-600 hover:underline">Edit</button>
+              <button class="text-xs text-red-500 hover:underline">Delete</button>
+              <button onclick="generatePDF()" class="text-xs text-green-600 hover:underline ml-auto">Print PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== REPAIRS PAGE ===== -->
+  <div id="page-repairs" class="page">
+    <div class="page-header flex items-center justify-between mb-8">
+      <div>
+        <h1 class="page-title text-2xl font-bold text-gray-900">All Repairs</h1>
+        <p class="text-gray-500 text-sm mt-1">65 total records</p>
+      </div>
+      <button onclick="showPage('addrepair')" class="btn-primary flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Log Repair
+      </button>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="filter-bar px-6 py-4 border-b border-gray-100 flex gap-3">
+        <input type="text" placeholder="Search repairs..." style="max-width:280px"/>
+        <select style="width:auto;padding:8px 12px;font-size:13px;">
+          <option>All Status</option>
+          <option>Completed</option>
+          <option>In Progress</option>
+          <option>Pending</option>
+        </select>
+        <select style="width:auto;padding:8px 12px;font-size:13px;">
+          <option>All Dates</option>
+          <option>This Week</option>
+          <option>This Month</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="w-full text-sm" style="min-width:780px">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Car</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Plate</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Service Done</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Technician</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+              <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Cost</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+              <th class="px-6 py-3"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 font-medium cursor-pointer text-blue-600 hover:underline" onclick="showPage('cardetail')">Toyota Corolla</td>
+              <td class="px-6 py-4 text-gray-500 font-mono text-xs">RAB 123A</td>
+              <td class="px-6 py-4">Oil Change + Filter</td>
+              <td class="px-6 py-4 text-gray-500">Jean M.</td>
+              <td class="px-6 py-4 text-gray-500">Apr 25, 2026</td>
+              <td class="px-6 py-4 font-semibold text-right">$85</td>
+              <td class="px-6 py-4"><span class="status-badge status-completed">Completed</span></td>
+              <td class="px-6 py-4"><button onclick="generatePDF()" class="text-xs text-green-600 font-medium hover:underline">PDF</button></td>
+            </tr>
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 font-medium cursor-pointer text-blue-600 hover:underline" onclick="showPage('cardetail')">Honda CR-V</td>
+              <td class="px-6 py-4 text-gray-500 font-mono text-xs">RAC 456B</td>
+              <td class="px-6 py-4">Brake Pads Replacement</td>
+              <td class="px-6 py-4 text-gray-500">Pierre D.</td>
+              <td class="px-6 py-4 text-gray-500">Apr 26, 2026</td>
+              <td class="px-6 py-4 font-semibold text-right">$240</td>
+              <td class="px-6 py-4"><span class="status-badge status-progress">In Progress</span></td>
+              <td class="px-6 py-4"><button onclick="generatePDF()" class="text-xs text-green-600 font-medium hover:underline">PDF</button></td>
+            </tr>
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 font-medium cursor-pointer text-blue-600 hover:underline" onclick="showPage('cardetail')">Nissan X-Trail</td>
+              <td class="px-6 py-4 text-gray-500 font-mono text-xs">RAD 789C</td>
+              <td class="px-6 py-4">Engine Tune-Up</td>
+              <td class="px-6 py-4 text-gray-500">Jean M.</td>
+              <td class="px-6 py-4 text-gray-500">Apr 27, 2026</td>
+              <td class="px-6 py-4 font-semibold text-right">$320</td>
+              <td class="px-6 py-4"><span class="status-badge status-progress">In Progress</span></td>
+              <td class="px-6 py-4"><button onclick="generatePDF()" class="text-xs text-green-600 font-medium hover:underline">PDF</button></td>
+            </tr>
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 font-medium cursor-pointer text-blue-600 hover:underline" onclick="showPage('cardetail')">Toyota RAV4</td>
+              <td class="px-6 py-4 text-gray-500 font-mono text-xs">RAE 321D</td>
+              <td class="px-6 py-4">Suspension Check</td>
+              <td class="px-6 py-4 text-gray-500">Marie K.</td>
+              <td class="px-6 py-4 text-gray-500">Apr 24, 2026</td>
+              <td class="px-6 py-4 font-semibold text-right">$150</td>
+              <td class="px-6 py-4"><span class="status-badge status-completed">Completed</span></td>
+              <td class="px-6 py-4"><button onclick="generatePDF()" class="text-xs text-green-600 font-medium hover:underline">PDF</button></td>
+            </tr>
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 font-medium cursor-pointer text-blue-600 hover:underline" onclick="showPage('cardetail')">Subaru Forester</td>
+              <td class="px-6 py-4 text-gray-500 font-mono text-xs">RAF 654E</td>
+              <td class="px-6 py-4">Transmission Service</td>
+              <td class="px-6 py-4 text-gray-500">Pierre D.</td>
+              <td class="px-6 py-4 text-gray-500">Apr 20, 2026</td>
+              <td class="px-6 py-4 font-semibold text-right">$420</td>
+              <td class="px-6 py-4"><span class="status-badge status-pending">Pending</span></td>
+              <td class="px-6 py-4"><button onclick="generatePDF()" class="text-xs text-green-600 font-medium hover:underline">PDF</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ADD / EDIT VEHICLE (garage) ===== -->
+  <div id="page-addcar" class="page">
+    <div class="flex items-center gap-3 mb-6">
+      <button onclick="showPage('cars')" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <h1 id="garageAddCarTitle" class="page-title text-2xl font-bold text-gray-900">Add New Vehicle</h1>
+    </div>
+
+    <div class="max-w-2xl bg-white rounded-2xl border border-gray-100 shadow-sm p-8 card-padded">
+      <div id="garageVehicleFormError" class="auth-error" style="margin-bottom:12px;"></div>
+      <form id="garageVehicleFormEl">
+        <div id="garageVehicleForm"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== ADD REPAIR ===== -->
+  <div id="page-addrepair" class="page">
+    <div class="flex items-center gap-3 mb-6">
+      <button onclick="showPage('cardetail')" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div>
+        <h1 class="page-title text-2xl font-bold text-gray-900">Log New Repair</h1>
+        <p class="text-gray-500 text-sm">Toyota Corolla — RAB 123A</p>
+      </div>
+    </div>
+
+    <div class="max-w-3xl space-y-5">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 card-padded">
+        <p class="text-sm font-semibold text-gray-700 mb-4">Repair Details</p>
+        <div class="repair-form-grid grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Date *</label>
+            <input type="date" value="2026-04-28"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Mileage (km)</label>
+            <input type="number" placeholder="e.g. 82450"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Status</label>
+            <select>
+              <option>In Progress</option>
+              <option>Completed</option>
+              <option>Pending</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Service Title *</label>
+            <input type="text" placeholder="e.g. Oil Change + Air Filter Replacement"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Technician</label>
+            <select>
+              <option>Jean Mechanic</option>
+              <option>Pierre Dufour</option>
+              <option>Marie Kaberuka</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 card-padded">
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-sm font-semibold text-gray-700">Parts & Labor</p>
+          <button onclick="addRepairRow()" class="btn-secondary text-xs py-1.5 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Row
+          </button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="w-full text-sm" id="repairTable" style="min-width:560px">
+            <thead>
+              <tr class="border-b border-gray-100">
+                <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase w-24">Type</th>
+                <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase">Description</th>
+                <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase w-20">Qty</th>
+                <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase w-28">Unit Cost ($)</th>
+                <th class="pb-2 text-right text-xs font-semibold text-gray-400 uppercase w-24">Total</th>
+                <th class="w-8"></th>
+              </tr>
+            </thead>
+            <tbody id="repairRows">
+              <tr class="repair-row border-b border-gray-50">
+                <td class="py-2 pr-2"><select style="padding:6px 8px;font-size:13px;"><option>Part</option><option>Labor</option></select></td>
+                <td class="py-2 pr-2"><input type="text" placeholder="e.g. Engine Oil 5W-30" style="font-size:13px;"/></td>
+                <td class="py-2 pr-2"><input type="number" placeholder="1" min="1" style="font-size:13px;" class="qty-input" oninput="calcRow(this)"/></td>
+                <td class="py-2 pr-2"><input type="number" placeholder="0.00" style="font-size:13px;" class="price-input" oninput="calcRow(this)"/></td>
+                <td class="py-2 text-right font-semibold row-total">$0.00</td>
+                <td class="py-2 pl-2"><button onclick="removeRow(this)" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button></td>
+              </tr>
+              <tr class="repair-row border-b border-gray-50">
+                <td class="py-2 pr-2"><select style="padding:6px 8px;font-size:13px;"><option>Part</option><option>Labor</option></select></td>
+                <td class="py-2 pr-2"><input type="text" placeholder="e.g. Air Filter Denso" style="font-size:13px;"/></td>
+                <td class="py-2 pr-2"><input type="number" placeholder="1" min="1" style="font-size:13px;" class="qty-input" oninput="calcRow(this)"/></td>
+                <td class="py-2 pr-2"><input type="number" placeholder="0.00" style="font-size:13px;" class="price-input" oninput="calcRow(this)"/></td>
+                <td class="py-2 text-right font-semibold row-total">$0.00</td>
+                <td class="py-2 pl-2"><button onclick="removeRow(this)" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex justify-end mt-4 pt-4 border-t border-gray-100">
+          <div class="text-right">
+            <p class="text-xs text-gray-400">Total Cost</p>
+            <p class="text-2xl font-bold text-gray-900" id="grandTotal">$0.00</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 card-padded">
+        <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Notes / Remarks</label>
+        <textarea rows="3" placeholder="Any additional notes about this repair..."></textarea>
+      </div>
+
+      <div class="flex gap-3 flex-wrap">
+        <button onclick="showPage('cardetail')" class="btn-secondary">Cancel</button>
+        <button onclick="showPage('cardetail')" class="btn-primary">Save Repair</button>
+        <button onclick="generatePDF()" class="btn-green ml-auto">Save & Print PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       CUSTOMER DASHBOARD
+       ========================================================= -->
+  <div id="page-customer-dashboard" class="page">
+    <div class="greeting-strip">
+      <span class="wave">👋</span>
+      <p>Hi <strong id="customerGreetingName">there</strong> — here's your vehicles and alerts.</p>
+    </div>
+
+    <h1 class="page-title text-2xl font-bold text-gray-900 mb-1">My Dashboard</h1>
+    <p class="text-gray-500 text-sm mb-6">Track repairs, expirations, and patterns across all your cars.</p>
+
+    <!-- Inspection alert banners (rendered by JS) -->
+    <div id="inspectionAlerts" class="mb-6 space-y-3"></div>
+
+    <!-- Anomaly card (rendered by JS) -->
+    <div id="anomalyCard" class="mb-6"></div>
+
+    <!-- Stats -->
+    <div class="stats-grid grid grid-cols-3 gap-5 mb-8">
+      <div class="card card-padded bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-sm text-gray-500 font-medium">My Vehicles</p>
+          <div class="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0M3 17V9l3-6h12l3 6v8"/></svg>
+          </div>
+        </div>
+        <p class="stat-card-value text-3xl font-bold text-gray-900" id="customerStatVehicles">0</p>
+        <p class="text-xs text-gray-500 mt-1">linked to your account</p>
+      </div>
+      <div class="card card-padded bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-sm text-gray-500 font-medium">Total Spent</p>
+          <div class="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+        </div>
+        <p class="stat-card-value text-3xl font-bold text-gray-900" id="customerStatSpent">$0</p>
+        <p class="text-xs text-gray-500 mt-1">all-time across all garages</p>
+      </div>
+      <div class="card card-padded bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-sm text-gray-500 font-medium">Repairs Logged</p>
+          <div class="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+        </div>
+        <p class="stat-card-value text-3xl font-bold text-gray-900" id="customerStatRepairs">0</p>
+        <p class="text-xs text-gray-500 mt-1">total services on record</p>
+      </div>
+    </div>
+
+    <!-- Recent repairs -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="font-semibold text-gray-900">Recent Repairs Across My Vehicles</h2>
+        <button onclick="showPage('customer-vehicles')" class="text-sm text-blue-600 font-medium hover:underline">View all</button>
+      </div>
+      <div class="table-wrap">
+        <table class="w-full text-sm" style="min-width:640px">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Vehicle</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Service</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Cost</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50" id="customerRecentRepairs">
+            <tr><td colspan="5" class="px-6 py-8 text-center text-gray-400 text-sm">No repairs yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       CUSTOMER VEHICLES LIST
+       ========================================================= -->
+  <div id="page-customer-vehicles" class="page">
+    <div class="page-header flex items-center justify-between mb-6 flex-wrap gap-3">
+      <div>
+        <h1 class="page-title text-2xl font-bold text-gray-900">My Vehicles</h1>
+        <p class="text-gray-500 text-sm mt-1" id="customerVehiclesSubtitle">0 vehicles linked to your account</p>
+      </div>
+      <button onclick="openAddVehicleForm()" class="btn-primary flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Add Vehicle
+      </button>
+    </div>
+
+    <div id="customerVehiclesGrid" class="cars-grid grid grid-cols-3 gap-5"></div>
+
+    <!-- Archived customer vehicles -->
+    <div id="customerArchivedSection" class="mt-10" style="display:none;">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase">Archived / Sold Vehicles</h2>
+        <p class="text-xs text-gray-400" id="customerArchivedCount">0 archived vehicles</p>
+      </div>
+      <div id="customerArchivedGrid" class="cars-grid grid grid-cols-3 gap-5"></div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       CUSTOMER ADD / EDIT VEHICLE FORM
+       ========================================================= -->
+  <div id="page-customer-vehicle-form" class="page">
+    <div class="flex items-center gap-3 mb-6">
+      <button onclick="cancelVehicleForm()" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div>
+        <h1 id="customerVehicleFormTitle" class="page-title text-2xl font-bold text-gray-900">Add a Vehicle</h1>
+        <p class="text-gray-500 text-sm">Cars, motos, trucks, excavators — track any vehicle you own.</p>
+      </div>
+    </div>
+
+    <div class="max-w-2xl bg-white rounded-2xl border border-gray-100 shadow-sm p-8 card-padded">
+      <div id="customerVehicleFormError" class="auth-error" style="margin-bottom:12px;"></div>
+      <form id="customerVehicleFormEl">
+        <div id="customerVehicleForm"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       CUSTOMER VEHICLE DETAIL (read-only repair history)
+       ========================================================= -->
+  <div id="page-customer-vehicle-detail" class="page">
+    <div class="flex items-center gap-3 mb-6 flex-wrap">
+      <button onclick="showPage('customer-vehicles')" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div class="flex-1 min-w-0">
+        <h1 class="page-title text-2xl font-bold text-gray-900" id="custCarTitle">Vehicle</h1>
+        <p class="text-gray-500 text-sm" id="custCarSubtitle">—</p>
+      </div>
+      <div id="custCarActions" class="flex items-center gap-2 flex-wrap"></div>
+    </div>
+
+    <!-- Inspection status card -->
+    <div id="custInspectionCard" class="mb-6"></div>
+
+    <!-- Repair patterns / analytics -->
+    <div id="custPatternsCard" class="mb-6"></div>
+
+    <!-- Repair history timeline -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
+        <h2 class="font-semibold text-gray-900" id="custHistoryTitle">Repair History</h2>
+        <button onclick="generateCustomerVehiclePDF()" class="btn-green text-xs flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Download Full History
+        </button>
+      </div>
+      <div class="p-6 space-y-0" id="custHistoryTimeline"></div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       CUSTOMER ALERTS PAGE
+       ========================================================= -->
+  <div id="page-customer-alerts" class="page">
+    <div class="flex items-center gap-3 mb-6">
+      <h1 class="page-title text-2xl font-bold text-gray-900">Alerts & Anomalies</h1>
+    </div>
+
+    <div id="customerAlertsFull" class="space-y-4"></div>
+  </div>
+
+</main>
+
+<!-- PDF Success Toast -->
+<div id="pdfToast" class="fixed bottom-6 right-6 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium hidden items-center gap-2 z-50">
+  <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+  PDF downloaded successfully!
+</div>
+
+</div><!-- /#appShell -->
+
+<!-- Scripts -->
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/customer.js"></script>
+<script src="js/script.js"></script>
+</body>
+</html>
