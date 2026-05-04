@@ -308,7 +308,8 @@ async function deleteVehicleHard(id) {
 
 /* ---------- REPAIR CRUD ---------- */
 async function addRepair({
-  carId, garageId, date, mileage, status, title, technician,
+  carId, garageId, garageName, addedBy = 'garage',
+  date, mileage, status, title, technician,
   totalCost, notes, items
 }) {
   if (!carId)             throw new Error('Vehicle is required.');
@@ -316,15 +317,17 @@ async function addRepair({
   if (!title || !title.trim()) throw new Error('Service title is required.');
 
   const repairRow = {
-    car_id:     carId,
-    garage_id:  garageId || null,
+    car_id:      carId,
+    garage_id:   garageId || null,
+    garage_name: (garageName || '').trim() || null,
+    added_by:    addedBy,
     date,
-    mileage:    (mileage === '' || mileage == null) ? null : Number(mileage),
-    status:     status || 'In Progress',
-    title:      title.trim(),
-    technician: (technician || '').trim(),
-    total_cost: Number(totalCost) || 0,
-    notes:      (notes || '').trim()
+    mileage:     (mileage === '' || mileage == null) ? null : Number(mileage),
+    status:      status || 'In Progress',
+    title:       title.trim(),
+    technician:  (technician || '').trim(),
+    total_cost:  Number(totalCost) || 0,
+    notes:       (notes || '').trim()
   };
 
   const { data: repair, error } = await sb.from('repairs')
