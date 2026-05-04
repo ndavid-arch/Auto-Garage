@@ -335,11 +335,12 @@ function renderCustomerVehicleDetail() {
   document.getElementById('custCarSubtitle').textContent =
     `${car.plate || '—'} · ${car.year || '—'} · ${car.color || '—'} · ${vehicleMileageLabel(car)} · ${meta.label}`;
 
-  // Edit/archive buttons
+  // Edit/archive/log-repair buttons
   const actionsBox = document.getElementById('custCarActions');
   if (actionsBox) {
     const repairs = getRepairsForCar(car.id);
     actionsBox.innerHTML = `
+      ${car.archived ? '' : `<button onclick="openCustomerAddRepair('${car.id}')" class="btn-primary text-xs">+ Log Repair</button>`}
       <button onclick="openEditVehicleForm('${car.id}')" class="btn-secondary text-xs">Edit Vehicle</button>
       ${car.archived
         ? `<button onclick="onRestoreVehicle('${car.id}')" class="btn-primary text-xs">Restore</button>
@@ -1010,6 +1011,156 @@ function generateCustomerVehiclePDF() {
   setTimeout(() => { toast.classList.add('hidden'); toast.classList.remove('flex'); }, 3000);
 }
 
+/* ===========================================================
+   CUSTOMER — LOG A REPAIR
+   Customer records repairs done by garages on their vehicles.
+   Garage is picked from a dropdown of all registered garages, OR
+   the customer types a new garage name. If they pick a registered
+   garage, that garage will see this repair in their normal All
+   Repairs list (flagged as a customer entry).
+   =========================================================== */
+let _currentCustomerRepairCarId = null;
+const _NEW_GARAGE_VALUE = '__NEW__';
+
+function openCustomerAddRepair(carId) {
+  _currentCustomerRepairCarId = carId;
+  showPage('customer-add-repair');
+}
+
+function populateCustomerRepairForm() {
+  const car = getCarById(_currentCustomerRepairCarId);
+  if (!car) { showPage('customer-vehicles'); return; }
+  document.getElementById('customerRepairSubtitle').textContent =
+    `${car.brand} ${car.model} — ${car.plate || '—'}`;
+
+  // Garage dropdown: alphabetical list of registered garages + "add new"
+  const garages = [...(_cache.garages || [])].sort((a, b) =>
+    (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+  const select = document.getElementById('crfGarageId');
+  select.innerHTML = `
+    <option value="" disabled selected>— Pick a garage —</option>
+    ${garages.map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('')}
+    <option value="${_NEW_GARAGE_VALUE}">➕ Add a new garage…</option>
+  `;
+  document.getElementById('crfNewGarageBox').style.display = 'none';
+  document.getElementById('crfNewGarageName').value = '';
+
+  // Other fields
+  document.getElementById('crfDate').value = new Date().toISOString().slice(0, 10);
+  const form = document.getElementById('customerRepairFormEl');
+  form.querySelector('[name="status"]').value  = 'In Progress';
+  form.querySelector('[name="title"]').value   = '';
+  form.querySelector('[name="mileage"]').value = car.lastMileage || '';
+  form.querySelector('[name="notes"]').value   = '';
+
+  const err = document.getElementById('customerRepairFormError');
+  if (err) err.classList.remove('show');
+
+  // Reset items rows: seed two empty
+  const tbody = document.getElementById('repairRows');
+  if (tbody) {
+    tbody.innerHTML = '';
+    addRepairRow();
+    addRepairRow();
+    updateTotal();
+  }
+}
+
+function onCustomerGarageChange() {
+  const sel = document.getElementById('crfGarageId');
+  const box = document.getElementById('crfNewGarageBox');
+  if (sel.value === _NEW_GARAGE_VALUE) {
+    box.style.display = '';
+    document.getElementById('crfNewGarageName').focus();
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+async function handleCustomerRepairSubmit() {
+  const form   = document.getElementById('customerRepairFormEl');
+  const fd     = new FormData(form);
+  const errBox = document.getElementById('customerRepairFormError');
+  errBox.classList.remove('show');
+
+  const car = getCarById(_currentCustomerRepairCarId);
+  if (!car) { errBox.textContent = 'Vehicle not found.'; errBox.classList.add('show'); return; }
+
+  // Resolve garage: dropdown id, OR new typed name
+  let garageId   = null;
+  let garageName = null;
+  const selVal   = fd.get('garageId');
+  if (selVal === _NEW_GARAGE_VALUE) {
+    garageName = (document.getElementById('crfNewGarageName').value || '').trim();
+    if (!garageName) {
+      errBox.textContent = 'Type the new garage name, or pick one from the list.';
+      errBox.classList.add('show');
+      return;
+    }
+    // Auto-match against existing garages by case-insensitive name to prevent dupes
+    const match = (_cache.garages || []).find(g =>
+      (g.name || '').toLowerCase().trim() === garageName.toLowerCase());
+    if (match) { garageId = match.id; garageName = match.name; }
+  } else if (selVal) {
+    const g = (_cache.garages || []).find(x => x.id === selVal);
+    if (!g) { errBox.textContent = 'Pick a valid garage.'; errBox.classList.add('show'); return; }
+    garageId   = g.id;
+    garageName = g.name;
+  } else {
+    errBox.textContent = 'Pick a garage or add a new one.';
+    errBox.classList.add('show');
+    return;
+  }
+
+  // Collect line items
+  const items = [];
+  document.querySelectorAll('#repairRows tr').forEach(tr => {
+    const type = tr.querySelector('select')?.value || 'Part';
+    const desc = tr.querySelector('input[type="text"]')?.value || '';
+    const qty  = parseFloat(tr.querySelector('.qty-input')?.value)   || 0;
+    const unit = parseFloat(tr.querySelector('.price-input')?.value) || 0;
+    if (desc.trim() && (qty > 0 || unit > 0)) {
+      items.push({ type, description: desc.trim(), qty, unitCost: unit });
+    }
+  });
+
+  const totalCost = items.reduce((s, it) => s + it.qty * it.unitCost, 0);
+
+  try {
+    await addRepair({
+      carId:       car.id,
+      garageId,
+      garageName,
+      addedBy:     'customer',
+      date:        fd.get('date'),
+      mileage:     fd.get('mileage'),
+      status:      fd.get('status'),
+      title:       fd.get('title'),
+      technician:  '',
+      totalCost,
+      notes:       fd.get('notes'),
+      items
+    });
+
+    _currentCustomerCarId = car.id;
+    showPage('customer-vehicle-detail');
+    renderCustomerVehicleDetail();
+  } catch (err) {
+    errBox.textContent = err.message;
+    errBox.classList.add('show');
+  }
+}
+
+function cancelCustomerRepair() {
+  if (_currentCustomerRepairCarId) {
+    _currentCustomerCarId = _currentCustomerRepairCarId;
+    showPage('customer-vehicle-detail');
+    renderCustomerVehicleDetail();
+  } else {
+    showPage('customer-vehicles');
+  }
+}
+
 /* ---------- ROUTING HOOK ---------- */
 /* Called by script.js's showPage() when a customer page is opened */
 function onCustomerPageShow(pageName) {
@@ -1020,6 +1171,7 @@ function onCustomerPageShow(pageName) {
   if (pageName === 'customer-vehicle-detail') renderCustomerVehicleDetail();
   if (pageName === 'customer-alerts')         renderCustomerAlertsPage(customer);
   if (pageName === 'customer-vehicle-form')   populateVehicleForm(_editingVehicleId ? getCarById(_editingVehicleId) : null);
+  if (pageName === 'customer-add-repair')     populateCustomerRepairForm();
 }
 
 /* Hook for garage pages */
@@ -1170,11 +1322,14 @@ function renderGarageRepairsList() {
     const statusClass = r.status === 'Completed' ? 'status-completed'
                      : r.status === 'In Progress' ? 'status-progress'
                      : 'status-pending';
+    const customerBadge = r.addedBy === 'customer'
+      ? ' <span class="text-xs px-1.5 py-0.5 rounded" style="background:#dbeafe;color:#1d4ed8;" title="This repair was logged by the customer">👤 customer entry</span>'
+      : '';
     return `
       <tr class="hover:bg-gray-50">
         <td class="px-6 py-4 font-medium cursor-pointer text-blue-600 hover:underline" onclick="openGarageCarDetail('${r.carId}')">${car ? esc(car.brand + ' ' + car.model) : '—'}</td>
         <td class="px-6 py-4 text-gray-500 font-mono text-xs">${car ? esc(car.plate || '—') : '—'}</td>
-        <td class="px-6 py-4">${esc(r.title)}</td>
+        <td class="px-6 py-4">${esc(r.title)}${customerBadge}</td>
         <td class="px-6 py-4 text-gray-500">${esc(r.technician || '—')}</td>
         <td class="px-6 py-4 text-gray-500">${fmtDate(r.date)}</td>
         <td class="px-6 py-4 font-semibold text-right">${fmtMoney(r.totalCost)}</td>
