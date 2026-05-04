@@ -227,7 +227,7 @@ function addRepairRow() {
     <td class="py-2 pr-2"><input type="text" placeholder="Description" style="font-size:13px;"/></td>
     <td class="py-2 pr-2"><input type="number" placeholder="1" min="1" style="font-size:13px;" class="qty-input" oninput="calcRow(this)"/></td>
     <td class="py-2 pr-2"><input type="number" placeholder="0.00" style="font-size:13px;" class="price-input" oninput="calcRow(this)"/></td>
-    <td class="py-2 text-right font-semibold row-total">$0.00</td>
+    <td class="py-2 text-right font-semibold row-total">RWF 0</td>
     <td class="py-2 pl-2"><button onclick="removeRow(this)" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button></td>
   `;
   tbody.appendChild(row);
@@ -242,17 +242,27 @@ function calcRow(input) {
   const row = input.closest('tr');
   const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
   const price = parseFloat(row.querySelector('.price-input').value) || 0;
-  row.querySelector('.row-total').textContent = '$' + (qty * price).toFixed(2);
+  row.querySelector('.row-total').textContent = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'RWF',
+    maximumFractionDigits: 0
+  }).format(qty * price);
   updateTotal();
 }
 
 function updateTotal() {
   let total = 0;
   document.querySelectorAll('.row-total').forEach(el => {
-    total += parseFloat(el.textContent.replace('$', '')) || 0;
+    total += parseFloat(el.textContent.replace(/[^0-9.-]/g, '')) || 0;
   });
   const grandTotal = document.getElementById('grandTotal');
-  if (grandTotal) grandTotal.textContent = '$' + total.toFixed(2);
+  if (grandTotal) {
+    grandTotal.textContent = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'RWF',
+      maximumFractionDigits: 0
+    }).format(total);
+  }
 }
 
 /* ---------- PDF GENERATION ---------- */
