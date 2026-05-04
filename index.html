@@ -288,49 +288,10 @@
       <p class="text-gray-500 text-sm mt-1">Your shop at a glance.</p>
     </div>
 
-    <div class="stats-grid grid grid-cols-4 gap-5 mb-8">
-      <div class="card card-padded bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-sm text-gray-500 font-medium">Total Cars</p>
-          <div class="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
-            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0M3 17V9l3-6h12l3 6v8"/></svg>
-          </div>
-        </div>
-        <p class="stat-card-value text-3xl font-bold text-gray-900">24</p>
-        <p class="text-xs text-green-600 mt-1">+3 this month</p>
-      </div>
-      <div class="card card-padded bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-sm text-gray-500 font-medium">Open Repairs</p>
-          <div class="w-9 h-9 bg-yellow-50 rounded-xl flex items-center justify-center">
-            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          </div>
-        </div>
-        <p class="stat-card-value text-3xl font-bold text-gray-900">7</p>
-        <p class="text-xs text-yellow-600 mt-1">In progress</p>
-      </div>
-      <div class="card card-padded bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-sm text-gray-500 font-medium">Completed</p>
-          <div class="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center">
-            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          </div>
-        </div>
-        <p class="stat-card-value text-3xl font-bold text-gray-900">58</p>
-        <p class="text-xs text-green-600 mt-1">All time</p>
-      </div>
-      <div class="card card-padded bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-sm text-gray-500 font-medium">Revenue</p>
-          <div class="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center">
-            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          </div>
-        </div>
-        <p class="stat-card-value text-3xl font-bold text-gray-900">$4,280</p>
-        <p class="text-xs text-purple-600 mt-1">This month</p>
-      </div>
-    </div>
+    <!-- Stats — populated by renderGarageDashboard() -->
+    <div id="garageDashboardStats" class="stats-grid grid grid-cols-4 gap-5 mb-8"></div>
 
+    <!-- Recent Repairs — populated dynamically -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-8">
       <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
         <h2 class="font-semibold text-gray-900">Recent Repairs</h2>
@@ -348,40 +309,7 @@
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-50">
-            <tr class="hover:bg-gray-50 cursor-pointer" onclick="showPage('cardetail')">
-              <td class="px-6 py-4 font-medium">Toyota Corolla</td>
-              <td class="px-6 py-4 text-gray-500">RAB 123A</td>
-              <td class="px-6 py-4">Oil Change + Filter</td>
-              <td class="px-6 py-4 text-gray-500">Apr 25, 2026</td>
-              <td class="px-6 py-4 font-semibold">$85</td>
-              <td class="px-6 py-4"><span class="status-badge status-completed">Completed</span></td>
-            </tr>
-            <tr class="hover:bg-gray-50 cursor-pointer" onclick="showPage('cardetail')">
-              <td class="px-6 py-4 font-medium">Honda CR-V</td>
-              <td class="px-6 py-4 text-gray-500">RAC 456B</td>
-              <td class="px-6 py-4">Brake Pads Replacement</td>
-              <td class="px-6 py-4 text-gray-500">Apr 26, 2026</td>
-              <td class="px-6 py-4 font-semibold">$240</td>
-              <td class="px-6 py-4"><span class="status-badge status-progress">In Progress</span></td>
-            </tr>
-            <tr class="hover:bg-gray-50 cursor-pointer" onclick="showPage('cardetail')">
-              <td class="px-6 py-4 font-medium">Nissan X-Trail</td>
-              <td class="px-6 py-4 text-gray-500">RAD 789C</td>
-              <td class="px-6 py-4">Engine Tune-Up</td>
-              <td class="px-6 py-4 text-gray-500">Apr 27, 2026</td>
-              <td class="px-6 py-4 font-semibold">$320</td>
-              <td class="px-6 py-4"><span class="status-badge status-progress">In Progress</span></td>
-            </tr>
-            <tr class="hover:bg-gray-50 cursor-pointer" onclick="showPage('cardetail')">
-              <td class="px-6 py-4 font-medium">Toyota RAV4</td>
-              <td class="px-6 py-4 text-gray-500">RAE 321D</td>
-              <td class="px-6 py-4">Suspension Check</td>
-              <td class="px-6 py-4 text-gray-500">Apr 24, 2026</td>
-              <td class="px-6 py-4 font-semibold">$150</td>
-              <td class="px-6 py-4"><span class="status-badge status-completed">Completed</span></td>
-            </tr>
-          </tbody>
+          <tbody id="garageDashboardRecentRepairs" class="divide-y divide-gray-50"></tbody>
         </table>
       </div>
     </div>
@@ -419,166 +347,24 @@
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
       </button>
       <div>
-        <h1 class="page-title text-2xl font-bold text-gray-900">Toyota Corolla</h1>
-        <p class="text-gray-500 text-sm">RAB 123A · 2019 · Silver · Owner: Kalisa Jean</p>
+        <h1 id="garageCarTitle" class="page-title text-2xl font-bold text-gray-900">—</h1>
+        <p id="garageCarSubtitle" class="text-gray-500 text-sm">—</p>
       </div>
     </div>
 
     <div class="car-detail-grid grid grid-cols-3 gap-5 mb-8">
       <div class="col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <div class="grid grid-cols-3 gap-4 text-sm form-grid-3">
-          <div><p class="text-gray-400 text-xs mb-1">Brand / Make</p><p class="font-semibold">Toyota</p></div>
-          <div><p class="text-gray-400 text-xs mb-1">Model</p><p class="font-semibold">Corolla</p></div>
-          <div><p class="text-gray-400 text-xs mb-1">Year</p><p class="font-semibold">2019</p></div>
-          <div><p class="text-gray-400 text-xs mb-1">Color</p><p class="font-semibold">Silver</p></div>
-          <div><p class="text-gray-400 text-xs mb-1">Plate Number</p><p class="font-semibold bg-gray-100 inline-block px-2 py-0.5 rounded font-mono">RAB 123A</p></div>
-          <div><p class="text-gray-400 text-xs mb-1">VIN</p><p class="font-semibold text-gray-500">1HGBH41JXMN109186</p></div>
-          <div><p class="text-gray-400 text-xs mb-1">Owner</p><p class="font-semibold">Kalisa Jean</p></div>
-          <div><p class="text-gray-400 text-xs mb-1">Phone</p><p class="font-semibold">+250 788 123 456</p></div>
-          <div><p class="text-gray-400 text-xs mb-1">Last Mileage</p><p class="font-semibold">82,450 km</p></div>
-        </div>
+        <div id="garageCarFields" class="grid grid-cols-3 gap-4 text-sm form-grid-3"></div>
       </div>
-      <div class="car-detail-actions flex flex-col gap-3">
-        <button onclick="showPage('addrepair')" class="btn-primary text-center flex items-center justify-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          Log New Repair
-        </button>
-        <button onclick="generatePDF()" class="btn-green text-center flex items-center justify-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          Export PDF
-        </button>
-        <button class="btn-secondary text-center">Edit Car Info</button>
-      </div>
+      <div id="garageCarActions" class="car-detail-actions flex flex-col gap-3"></div>
     </div>
 
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-100">
-        <h2 class="font-semibold text-gray-900">Repair History (8 records)</h2>
+        <h2 id="garageCarHistoryTitle" class="font-semibold text-gray-900">Repair History</h2>
       </div>
 
-      <div class="p-6 space-y-0">
-        <div class="flex gap-4 pb-8">
-          <div class="flex flex-col items-center">
-            <div class="timeline-dot"></div>
-            <div class="timeline-line"></div>
-          </div>
-          <div class="flex-1 bg-gray-50 rounded-xl p-4 -mt-1">
-            <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
-              <div>
-                <p class="font-semibold text-gray-900">Oil Change + Air Filter Replacement</p>
-                <p class="text-xs text-gray-400 mt-0.5">Apr 25, 2026 · 82,450 km · Tech: Jean Mechanic</p>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="status-badge status-completed">Completed</span>
-                <span class="font-bold text-gray-900">$85</span>
-              </div>
-            </div>
-            <div class="table-wrap">
-              <table class="w-full text-xs border border-gray-200 rounded-lg overflow-hidden" style="min-width:480px">
-                <thead class="bg-gray-100">
-                  <tr>
-                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Type</th>
-                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Description</th>
-                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Qty</th>
-                    <th class="px-3 py-2 text-right font-semibold text-gray-500">Cost</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 bg-white">
-                  <tr><td class="px-3 py-2 text-blue-600 font-medium">Part</td><td class="px-3 py-2">Engine Oil 5W-30 (4L)</td><td class="px-3 py-2">1</td><td class="px-3 py-2 text-right">$40</td></tr>
-                  <tr><td class="px-3 py-2 text-blue-600 font-medium">Part</td><td class="px-3 py-2">Air Filter (Denso)</td><td class="px-3 py-2">1</td><td class="px-3 py-2 text-right">$20</td></tr>
-                  <tr><td class="px-3 py-2 text-orange-600 font-medium">Labor</td><td class="px-3 py-2">Oil drain, refill & filter install</td><td class="px-3 py-2">1h</td><td class="px-3 py-2 text-right">$25</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="flex gap-2 mt-3">
-              <button class="text-xs text-blue-600 hover:underline">Edit</button>
-              <button class="text-xs text-red-500 hover:underline">Delete</button>
-              <button onclick="generatePDF()" class="text-xs text-green-600 hover:underline ml-auto">Print PDF</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex gap-4 pb-8">
-          <div class="flex flex-col items-center">
-            <div class="timeline-dot" style="background:#eab308"></div>
-            <div class="timeline-line"></div>
-          </div>
-          <div class="flex-1 bg-gray-50 rounded-xl p-4 -mt-1">
-            <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
-              <div>
-                <p class="font-semibold text-gray-900">Brake System Inspection</p>
-                <p class="text-xs text-gray-400 mt-0.5">Mar 10, 2026 · 79,200 km · Tech: Pierre Dufour</p>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="status-badge status-completed">Completed</span>
-                <span class="font-bold text-gray-900">$195</span>
-              </div>
-            </div>
-            <div class="table-wrap">
-              <table class="w-full text-xs border border-gray-200 rounded-lg overflow-hidden" style="min-width:480px">
-                <thead class="bg-gray-100">
-                  <tr>
-                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Type</th>
-                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Description</th>
-                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Qty</th>
-                    <th class="px-3 py-2 text-right font-semibold text-gray-500">Cost</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 bg-white">
-                  <tr><td class="px-3 py-2 text-blue-600 font-medium">Part</td><td class="px-3 py-2">Front Brake Pads (Bosch)</td><td class="px-3 py-2">1 set</td><td class="px-3 py-2 text-right">$85</td></tr>
-                  <tr><td class="px-3 py-2 text-blue-600 font-medium">Part</td><td class="px-3 py-2">Brake Fluid DOT4</td><td class="px-3 py-2">1L</td><td class="px-3 py-2 text-right">$15</td></tr>
-                  <tr><td class="px-3 py-2 text-orange-600 font-medium">Labor</td><td class="px-3 py-2">Brake pad replacement + bleed</td><td class="px-3 py-2">2h</td><td class="px-3 py-2 text-right">$95</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="flex gap-2 mt-3">
-              <button class="text-xs text-blue-600 hover:underline">Edit</button>
-              <button class="text-xs text-red-500 hover:underline">Delete</button>
-              <button onclick="generatePDF()" class="text-xs text-green-600 hover:underline ml-auto">Print PDF</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex gap-4">
-          <div class="flex flex-col items-center">
-            <div class="timeline-dot" style="background:#10b981"></div>
-          </div>
-          <div class="flex-1 bg-gray-50 rounded-xl p-4 -mt-1">
-            <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
-              <div>
-                <p class="font-semibold text-gray-900">Spark Plugs + Timing Belt</p>
-                <p class="text-xs text-gray-400 mt-0.5">Jan 5, 2026 · 74,000 km · Tech: Jean Mechanic</p>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="status-badge status-completed">Completed</span>
-                <span class="font-bold text-gray-900">$310</span>
-              </div>
-            </div>
-            <div class="table-wrap">
-              <table class="w-full text-xs border border-gray-200 rounded-lg overflow-hidden" style="min-width:480px">
-                <thead class="bg-gray-100">
-                  <tr>
-                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Type</th>
-                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Description</th>
-                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Qty</th>
-                    <th class="px-3 py-2 text-right font-semibold text-gray-500">Cost</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 bg-white">
-                  <tr><td class="px-3 py-2 text-blue-600 font-medium">Part</td><td class="px-3 py-2">NGK Spark Plugs</td><td class="px-3 py-2">4</td><td class="px-3 py-2 text-right">$60</td></tr>
-                  <tr><td class="px-3 py-2 text-blue-600 font-medium">Part</td><td class="px-3 py-2">Timing Belt Kit</td><td class="px-3 py-2">1</td><td class="px-3 py-2 text-right">$150</td></tr>
-                  <tr><td class="px-3 py-2 text-orange-600 font-medium">Labor</td><td class="px-3 py-2">Full engine service</td><td class="px-3 py-2">3h</td><td class="px-3 py-2 text-right">$100</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="flex gap-2 mt-3">
-              <button class="text-xs text-blue-600 hover:underline">Edit</button>
-              <button class="text-xs text-red-500 hover:underline">Delete</button>
-              <button onclick="generatePDF()" class="text-xs text-green-600 hover:underline ml-auto">Print PDF</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div id="garageCarHistory" class="p-6 space-y-0"></div>
     </div>
   </div>
 
@@ -587,9 +373,9 @@
     <div class="page-header flex items-center justify-between mb-8">
       <div>
         <h1 class="page-title text-2xl font-bold text-gray-900">All Repairs</h1>
-        <p class="text-gray-500 text-sm mt-1">65 total records</p>
+        <p id="garageRepairsSubtitle" class="text-gray-500 text-sm mt-1">0 records</p>
       </div>
-      <button onclick="showPage('addrepair')" class="btn-primary flex items-center gap-2">
+      <button onclick="openGarageAddRepair()" class="btn-primary flex items-center gap-2">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Log Repair
       </button>
@@ -597,17 +383,17 @@
 
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div class="filter-bar px-6 py-4 border-b border-gray-100 flex gap-3">
-        <input type="text" placeholder="Search repairs..." style="max-width:280px"/>
-        <select style="width:auto;padding:8px 12px;font-size:13px;">
-          <option>All Status</option>
+        <input id="garageRepairsSearch" type="text" placeholder="Search repairs..." style="max-width:280px" oninput="renderGarageRepairsList()"/>
+        <select id="garageRepairsStatus" style="width:auto;padding:8px 12px;font-size:13px;" onchange="renderGarageRepairsList()">
+          <option value="">All Status</option>
           <option>Completed</option>
           <option>In Progress</option>
           <option>Pending</option>
         </select>
-        <select style="width:auto;padding:8px 12px;font-size:13px;">
-          <option>All Dates</option>
-          <option>This Week</option>
-          <option>This Month</option>
+        <select id="garageRepairsDate" style="width:auto;padding:8px 12px;font-size:13px;" onchange="renderGarageRepairsList()">
+          <option value="">All Dates</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
         </select>
       </div>
       <div class="table-wrap">
@@ -624,58 +410,7 @@
               <th class="px-6 py-3"></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-50">
-            <tr class="hover:bg-gray-50">
-              <td class="px-6 py-4 font-medium cursor-pointer text-blue-600 hover:underline" onclick="showPage('cardetail')">Toyota Corolla</td>
-              <td class="px-6 py-4 text-gray-500 font-mono text-xs">RAB 123A</td>
-              <td class="px-6 py-4">Oil Change + Filter</td>
-              <td class="px-6 py-4 text-gray-500">Jean M.</td>
-              <td class="px-6 py-4 text-gray-500">Apr 25, 2026</td>
-              <td class="px-6 py-4 font-semibold text-right">$85</td>
-              <td class="px-6 py-4"><span class="status-badge status-completed">Completed</span></td>
-              <td class="px-6 py-4"><button onclick="generatePDF()" class="text-xs text-green-600 font-medium hover:underline">PDF</button></td>
-            </tr>
-            <tr class="hover:bg-gray-50">
-              <td class="px-6 py-4 font-medium cursor-pointer text-blue-600 hover:underline" onclick="showPage('cardetail')">Honda CR-V</td>
-              <td class="px-6 py-4 text-gray-500 font-mono text-xs">RAC 456B</td>
-              <td class="px-6 py-4">Brake Pads Replacement</td>
-              <td class="px-6 py-4 text-gray-500">Pierre D.</td>
-              <td class="px-6 py-4 text-gray-500">Apr 26, 2026</td>
-              <td class="px-6 py-4 font-semibold text-right">$240</td>
-              <td class="px-6 py-4"><span class="status-badge status-progress">In Progress</span></td>
-              <td class="px-6 py-4"><button onclick="generatePDF()" class="text-xs text-green-600 font-medium hover:underline">PDF</button></td>
-            </tr>
-            <tr class="hover:bg-gray-50">
-              <td class="px-6 py-4 font-medium cursor-pointer text-blue-600 hover:underline" onclick="showPage('cardetail')">Nissan X-Trail</td>
-              <td class="px-6 py-4 text-gray-500 font-mono text-xs">RAD 789C</td>
-              <td class="px-6 py-4">Engine Tune-Up</td>
-              <td class="px-6 py-4 text-gray-500">Jean M.</td>
-              <td class="px-6 py-4 text-gray-500">Apr 27, 2026</td>
-              <td class="px-6 py-4 font-semibold text-right">$320</td>
-              <td class="px-6 py-4"><span class="status-badge status-progress">In Progress</span></td>
-              <td class="px-6 py-4"><button onclick="generatePDF()" class="text-xs text-green-600 font-medium hover:underline">PDF</button></td>
-            </tr>
-            <tr class="hover:bg-gray-50">
-              <td class="px-6 py-4 font-medium cursor-pointer text-blue-600 hover:underline" onclick="showPage('cardetail')">Toyota RAV4</td>
-              <td class="px-6 py-4 text-gray-500 font-mono text-xs">RAE 321D</td>
-              <td class="px-6 py-4">Suspension Check</td>
-              <td class="px-6 py-4 text-gray-500">Marie K.</td>
-              <td class="px-6 py-4 text-gray-500">Apr 24, 2026</td>
-              <td class="px-6 py-4 font-semibold text-right">$150</td>
-              <td class="px-6 py-4"><span class="status-badge status-completed">Completed</span></td>
-              <td class="px-6 py-4"><button onclick="generatePDF()" class="text-xs text-green-600 font-medium hover:underline">PDF</button></td>
-            </tr>
-            <tr class="hover:bg-gray-50">
-              <td class="px-6 py-4 font-medium cursor-pointer text-blue-600 hover:underline" onclick="showPage('cardetail')">Subaru Forester</td>
-              <td class="px-6 py-4 text-gray-500 font-mono text-xs">RAF 654E</td>
-              <td class="px-6 py-4">Transmission Service</td>
-              <td class="px-6 py-4 text-gray-500">Pierre D.</td>
-              <td class="px-6 py-4 text-gray-500">Apr 20, 2026</td>
-              <td class="px-6 py-4 font-semibold text-right">$420</td>
-              <td class="px-6 py-4"><span class="status-badge status-pending">Pending</span></td>
-              <td class="px-6 py-4"><button onclick="generatePDF()" class="text-xs text-green-600 font-medium hover:underline">PDF</button></td>
-            </tr>
-          </tbody>
+          <tbody id="garageRepairsList" class="divide-y divide-gray-50"></tbody>
         </table>
       </div>
     </div>
@@ -701,30 +436,34 @@
   <!-- ===== ADD REPAIR ===== -->
   <div id="page-addrepair" class="page">
     <div class="flex items-center gap-3 mb-6">
-      <button onclick="showPage('cardetail')" class="text-gray-400 hover:text-gray-600">
+      <button onclick="cancelGarageRepair()" class="text-gray-400 hover:text-gray-600">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
       </button>
       <div>
         <h1 class="page-title text-2xl font-bold text-gray-900">Log New Repair</h1>
-        <p class="text-gray-500 text-sm">Toyota Corolla — RAB 123A</p>
+        <p id="garageRepairSubtitle" class="text-gray-500 text-sm">—</p>
       </div>
     </div>
 
-    <div class="max-w-3xl space-y-5">
+    <form id="garageRepairFormEl" class="max-w-3xl space-y-5" onsubmit="event.preventDefault(); handleGarageRepairSubmit();">
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 card-padded">
         <p class="text-sm font-semibold text-gray-700 mb-4">Repair Details</p>
         <div class="repair-form-grid grid grid-cols-3 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Date *</label>
-            <input type="date" value="2026-04-28"/>
+          <div class="col-span-3">
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Vehicle *</label>
+            <select name="carId" id="grfCarId" required></select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Mileage (km)</label>
-            <input type="number" placeholder="e.g. 82450"/>
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Date *</label>
+            <input type="date" name="date" id="grfDate" required/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Mileage</label>
+            <input type="number" name="mileage" placeholder="e.g. 82450"/>
           </div>
           <div>
             <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Status</label>
-            <select>
+            <select name="status">
               <option>In Progress</option>
               <option>Completed</option>
               <option>Pending</option>
@@ -732,15 +471,11 @@
           </div>
           <div class="col-span-2">
             <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Service Title *</label>
-            <input type="text" placeholder="e.g. Oil Change + Air Filter Replacement"/>
+            <input type="text" name="title" placeholder="e.g. Oil Change + Air Filter Replacement" required/>
           </div>
           <div>
             <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Technician</label>
-            <select>
-              <option>Jean Mechanic</option>
-              <option>Pierre Dufour</option>
-              <option>Marie Kaberuka</option>
-            </select>
+            <input type="text" name="technician" placeholder="e.g. Jean Mechanic"/>
           </div>
         </div>
       </div>
@@ -748,7 +483,7 @@
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 card-padded">
         <div class="flex items-center justify-between mb-4">
           <p class="text-sm font-semibold text-gray-700">Parts & Labor</p>
-          <button onclick="addRepairRow()" class="btn-secondary text-xs py-1.5 flex items-center gap-1">
+          <button type="button" onclick="addRepairRow()" class="btn-secondary text-xs py-1.5 flex items-center gap-1">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Add Row
           </button>
@@ -766,24 +501,7 @@
                 <th class="w-8"></th>
               </tr>
             </thead>
-            <tbody id="repairRows">
-              <tr class="repair-row border-b border-gray-50">
-                <td class="py-2 pr-2"><select style="padding:6px 8px;font-size:13px;"><option>Part</option><option>Labor</option></select></td>
-                <td class="py-2 pr-2"><input type="text" placeholder="e.g. Engine Oil 5W-30" style="font-size:13px;"/></td>
-                <td class="py-2 pr-2"><input type="number" placeholder="1" min="1" style="font-size:13px;" class="qty-input" oninput="calcRow(this)"/></td>
-                <td class="py-2 pr-2"><input type="number" placeholder="0.00" style="font-size:13px;" class="price-input" oninput="calcRow(this)"/></td>
-                <td class="py-2 text-right font-semibold row-total">$0.00</td>
-                <td class="py-2 pl-2"><button onclick="removeRow(this)" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button></td>
-              </tr>
-              <tr class="repair-row border-b border-gray-50">
-                <td class="py-2 pr-2"><select style="padding:6px 8px;font-size:13px;"><option>Part</option><option>Labor</option></select></td>
-                <td class="py-2 pr-2"><input type="text" placeholder="e.g. Air Filter Denso" style="font-size:13px;"/></td>
-                <td class="py-2 pr-2"><input type="number" placeholder="1" min="1" style="font-size:13px;" class="qty-input" oninput="calcRow(this)"/></td>
-                <td class="py-2 pr-2"><input type="number" placeholder="0.00" style="font-size:13px;" class="price-input" oninput="calcRow(this)"/></td>
-                <td class="py-2 text-right font-semibold row-total">$0.00</td>
-                <td class="py-2 pl-2"><button onclick="removeRow(this)" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button></td>
-              </tr>
-            </tbody>
+            <tbody id="repairRows"></tbody>
           </table>
         </div>
 
@@ -797,15 +515,15 @@
 
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 card-padded">
         <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Notes / Remarks</label>
-        <textarea rows="3" placeholder="Any additional notes about this repair..."></textarea>
+        <textarea name="notes" rows="3" placeholder="Any additional notes about this repair..."></textarea>
       </div>
 
+      <div id="garageRepairFormError" class="auth-error" style="margin-bottom:0;"></div>
       <div class="flex gap-3 flex-wrap">
-        <button onclick="showPage('cardetail')" class="btn-secondary">Cancel</button>
-        <button onclick="showPage('cardetail')" class="btn-primary">Save Repair</button>
-        <button onclick="generatePDF()" class="btn-green ml-auto">Save & Print PDF</button>
+        <button type="button" onclick="cancelGarageRepair()" class="btn-secondary">Cancel</button>
+        <button type="submit" class="btn-primary">Save Repair</button>
       </div>
-    </div>
+    </form>
   </div>
 
   <!-- =========================================================
