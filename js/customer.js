@@ -426,7 +426,7 @@ function renderCustomerVehicleDetail() {
     const dotColor = r.status === 'Completed' ? '#10b981' : r.status === 'In Progress' ? '#eab308' : '#94a3b8';
     const itemRows = (r.items || []).map(it => `
       <tr>
-        <td class="px-3 py-2 ${it.type === 'Labor' ? 'text-orange-600' : 'text-blue-600'} font-medium">${it.type}</td>
+        <td class="px-3 py-2 ${(it.type || '').toLowerCase() === 'labor' ? 'text-orange-600' : (it.type || '').toLowerCase() === 'vat' ? 'text-green-600' : 'text-blue-600'} font-medium">${it.type}</td>
         <td class="px-3 py-2">${it.description}</td>
         <td class="px-3 py-2">${it.qty}</td>
         <td class="px-3 py-2 text-right">${fmtMoney(it.qty * it.unitCost)}</td>
@@ -1057,7 +1057,7 @@ function populateCustomerRepairForm() {
   if (err) err.classList.remove('show');
 
   // Reset items rows: seed two empty
-  const tbody = document.getElementById('repairRows');
+  const tbody = document.getElementById('customerRepairRows');
   if (tbody) {
     tbody.innerHTML = '';
     addRepairRow();
@@ -1114,8 +1114,8 @@ async function handleCustomerRepairSubmit() {
 
   // Collect line items
   const items = [];
-  document.querySelectorAll('#repairRows tr').forEach(tr => {
-    const type = tr.querySelector('select')?.value || 'Part';
+  document.querySelectorAll('#customerRepairRows tr').forEach(tr => {
+    const type = tr.querySelector('select')?.value || 'part';
     const desc = tr.querySelector('input[type="text"]')?.value || '';
     const qty  = parseFloat(tr.querySelector('.qty-input')?.value)   || 0;
     const unit = parseFloat(tr.querySelector('.price-input')?.value) || 0;
@@ -1410,7 +1410,7 @@ function renderGarageCarDetail() {
                      : 'status-pending';
     const itemRows = (r.items || []).map(it => `
       <tr>
-        <td class="px-3 py-2 ${it.type === 'Labor' ? 'text-orange-600' : 'text-blue-600'} font-medium">${esc(it.type)}</td>
+        <td class="px-3 py-2 ${(it.type || '').toLowerCase() === 'labor' ? 'text-orange-600' : (it.type || '').toLowerCase() === 'vat' ? 'text-green-600' : 'text-blue-600'} font-medium">${esc(it.type)}</td>
         <td class="px-3 py-2">${esc(it.description || '')}</td>
         <td class="px-3 py-2">${esc(it.qty ?? 1)}</td>
         <td class="px-3 py-2 text-right">${fmtMoney((it.qty || 0) * (it.unitCost || 0))}</td>
@@ -1528,7 +1528,7 @@ function populateGarageRepairForm() {
   if (err) err.classList.remove('show');
 
   // Reset items rows: clear and seed two empty ones
-  const tbody = document.getElementById('repairRows');
+  const tbody = document.getElementById('garageRepairRows');
   if (tbody) {
     tbody.innerHTML = '';
     addRepairRow();
@@ -1548,8 +1548,8 @@ async function handleGarageRepairSubmit() {
 
   // Collect items
   const items = [];
-  document.querySelectorAll('#repairRows tr').forEach(tr => {
-    const type = tr.querySelector('select')?.value || 'Part';
+  document.querySelectorAll('#garageRepairRows tr').forEach(tr => {
+    const type = tr.querySelector('select')?.value || 'part';
     const desc = tr.querySelector('input[type="text"]')?.value || '';
     const qty  = parseFloat(tr.querySelector('.qty-input')?.value)   || 0;
     const unit = parseFloat(tr.querySelector('.price-input')?.value) || 0;
