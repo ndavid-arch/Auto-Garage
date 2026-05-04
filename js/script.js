@@ -223,7 +223,7 @@ function addRepairRow() {
   const row = document.createElement('tr');
   row.className = 'repair-row border-b border-gray-50';
   row.innerHTML = `
-    <td class="py-2 pr-2"><select style="padding:6px 8px;font-size:13px;"><option>Part</option><option>Labor</option></select></td>
+    <td class="py-2 pr-2"><select style="padding:6px 8px;font-size:13px;"><option value="part">part</option><option value="labor">labor</option><option value="vat">VAT</option></select></td>
     <td class="py-2 pr-2"><input type="text" placeholder="Description" style="font-size:13px;"/></td>
     <td class="py-2 pr-2"><input type="number" placeholder="1" min="1" style="font-size:13px;" class="qty-input" oninput="calcRow(this)"/></td>
     <td class="py-2 pr-2"><input type="number" placeholder="0.00" style="font-size:13px;" class="price-input" oninput="calcRow(this)"/></td>
@@ -315,9 +315,9 @@ function generatePDF() {
     startY: 97,
     head: [['Type', 'Description', 'Qty', 'Unit Cost', 'Total']],
     body: [
-      ['Part',  'Engine Oil 5W-30 (4L)',           '1',  '$40.00', '$40.00'],
-      ['Part',  'Air Filter (Denso)',              '1',  '$20.00', '$20.00'],
-      ['Labor', 'Oil drain, refill & filter install', '1h', '$25.00', '$25.00'],
+      ['part',  'Engine Oil 5W-30 (4L)',           '1',  '$40.00', '$40.00'],
+      ['part',  'Air Filter (Denso)',              '1',  '$20.00', '$20.00'],
+      ['labor', 'Oil drain, refill & filter install', '1h', '$25.00', '$25.00'],
     ],
     foot: [['', '', '', 'TOTAL', '$85.00']],
     headStyles: { fillColor: [37, 99, 235], fontSize: 9 },
