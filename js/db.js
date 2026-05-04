@@ -19,6 +19,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const _cache = {
   cars:    [],
   repairs: [],
+  garages: [],   // directory of all garage stores — used by customer add-repair dropdown
   ready:   false
 };
 
@@ -47,6 +48,7 @@ function camelToSnake(row) {
 async function loadUserData(user, role) {
   _cache.cars    = [];
   _cache.repairs = [];
+  _cache.garages = [];
   _cache.ready   = false;
 
   /* CARS — customers see vehicles where ownerEmail matches.
@@ -75,11 +77,17 @@ async function loadUserData(user, role) {
     }));
   }
 
+  /* GARAGE DIRECTORY — list of all stores, used by the customer add-repair
+     dropdown so users pick from existing garages instead of typing duplicates. */
+  const { data: stores } = await sb.from('stores').select('id, store_name');
+  _cache.garages = (stores || []).map(s => ({ id: s.id, name: s.store_name }));
+
   _cache.ready = true;
 }
 
 function clearCache() {
   _cache.cars    = [];
   _cache.repairs = [];
+  _cache.garages = [];
   _cache.ready   = false;
 }
