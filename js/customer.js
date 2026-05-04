@@ -1024,6 +1024,544 @@ function onCustomerPageShow(pageName) {
 
 /* Hook for garage pages */
 function onGaragePageShow(pageName) {
-  if (pageName === 'cars')   renderGarageVehiclesList();
-  if (pageName === 'addcar') populateVehicleForm(_editingVehicleId ? getCarById(_editingVehicleId) : null);
+  if (pageName === 'dashboard') renderGarageDashboard(getCurrentStore());
+  if (pageName === 'cars')      renderGarageVehiclesList();
+  if (pageName === 'addcar')    populateVehicleForm(_editingVehicleId ? getCarById(_editingVehicleId) : null);
+  if (pageName === 'cardetail') renderGarageCarDetail();
+  if (pageName === 'repairs')   renderGarageRepairsList();
+  if (pageName === 'addrepair') populateGarageRepairForm();
+}
+
+/* ===========================================================
+   GARAGE DASHBOARD — stats + recent repairs
+   =========================================================== */
+function renderGarageDashboard(store) {
+  if (!store) return;
+  const cars = getCarsForGarage(store.id);
+
+  // Repairs at THIS garage
+  const ourRepairs = _cache.repairs.filter(r => r.garageId === store.id);
+
+  const totalCars   = cars.length;
+  const openRepairs = ourRepairs.filter(r => r.status === 'In Progress' || r.status === 'Pending').length;
+  const completed   = ourRepairs.filter(r => r.status === 'Completed').length;
+
+  const now        = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const revenueThisMonth = ourRepairs
+    .filter(r => new Date(r.date) >= monthStart && r.status === 'Completed')
+    .reduce((sum, r) => sum + Number(r.totalCost || 0), 0);
+  const carsThisMonth = cars.filter(c => new Date(c.createdAt || 0) >= monthStart).length;
+
+  // Stats
+  const statsBox = document.getElementById('garageDashboardStats');
+  if (statsBox) {
+    statsBox.innerHTML = [
+      _statCardHtml({ label: 'Total Cars',   value: totalCars,
+                      sub: `${carsThisMonth ? '+'+carsThisMonth : 'No new'} this month`, tint: 'blue',   icon: 'car'    }),
+      _statCardHtml({ label: 'Open Repairs', value: openRepairs,
+                      sub: 'In progress',                                tint: 'yellow', icon: 'clock'  }),
+      _statCardHtml({ label: 'Completed',    value: completed,
+                      sub: 'All time',                                   tint: 'green',  icon: 'check'  }),
+      _statCardHtml({ label: 'Revenue',      value: '$' + revenueThisMonth.toLocaleString(undefined, { maximumFractionDigits: 0 }),
+                      sub: 'This month',                                 tint: 'purple', icon: 'dollar' })
+    ].join('');
+  }
+
+  // Recent repairs (top 5 by date)
+  const recent = [...ourRepairs].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+  const tbody = document.getElementById('garageDashboardRecentRepairs');
+  if (!tbody) return;
+  if (!recent.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-400 text-sm">No repairs logged yet — register a vehicle and click "Log Repair" to get started.</td></tr>`;
+  } else {
+    tbody.innerHTML = recent.map(r => {
+      const car = getCarById(r.carId);
+      const statusClass = r.status === 'Completed' ? 'status-completed'
+                       : r.status === 'In Progress' ? 'status-progress'
+                       : 'status-pending';
+      return `
+        <tr class="hover:bg-gray-50 cursor-pointer" onclick="openGarageCarDetail('${r.carId}')">
+          <td class="px-6 py-4 font-medium">${car ? esc(car.brand + ' ' + car.model) : '—'}</td>
+          <td class="px-6 py-4 text-gray-500">${car ? esc(car.plate || '—') : '—'}</td>
+          <td class="px-6 py-4">${esc(r.title)}</td>
+          <td class="px-6 py-4 text-gray-500">${fmtDate(r.date)}</td>
+          <td class="px-6 py-4 font-semibold">${fmtMoney(r.totalCost)}</td>
+          <td class="px-6 py-4"><span class="status-badge ${statusClass}">${esc(r.status)}</span></td>
+        </tr>`;
+    }).join('');
+  }
+}
+
+function _statCardHtml({ label, value, sub, tint, icon }) {
+  const icons = {
+    car:    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0M3 17V9l3-6h12l3 6v8"/>',
+    clock:  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+    check:  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+    dollar: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+  };
+  const tints = {
+    blue:   { bg: '#eff6ff', text: '#2563eb', sub: '#16a34a' },
+    yellow: { bg: '#fefce8', text: '#ca8a04', sub: '#ca8a04' },
+    green:  { bg: '#f0fdf4', text: '#16a34a', sub: '#16a34a' },
+    purple: { bg: '#faf5ff', text: '#9333ea', sub: '#9333ea' }
+  };
+  const t = tints[tint];
+  return `
+    <div class="card card-padded bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-sm text-gray-500 font-medium">${esc(label)}</p>
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:${t.bg};">
+          <svg class="w-5 h-5" fill="none" stroke="${t.text}" viewBox="0 0 24 24">${icons[icon]}</svg>
+        </div>
+      </div>
+      <p class="stat-card-value text-3xl font-bold text-gray-900">${esc(value)}</p>
+      <p class="text-xs mt-1" style="color:${t.sub};">${esc(sub)}</p>
+    </div>`;
+}
+
+/* ===========================================================
+   GARAGE — ALL REPAIRS LIST
+   =========================================================== */
+function renderGarageRepairsList() {
+  const store = getCurrentStore();
+  if (!store) return;
+
+  let repairs = _cache.repairs.filter(r => r.garageId === store.id);
+
+  // Filters
+  const search       = (document.getElementById('garageRepairsSearch')?.value || '').toLowerCase().trim();
+  const statusFilter = document.getElementById('garageRepairsStatus')?.value || '';
+  const dateFilter   = document.getElementById('garageRepairsDate')?.value || '';
+
+  if (search) {
+    repairs = repairs.filter(r => {
+      const car = getCarById(r.carId);
+      const carText = car ? (car.brand + ' ' + car.model + ' ' + (car.plate || '')) : '';
+      return (r.title || '').toLowerCase().includes(search)
+          || (r.technician || '').toLowerCase().includes(search)
+          || carText.toLowerCase().includes(search);
+    });
+  }
+  if (statusFilter) repairs = repairs.filter(r => r.status === statusFilter);
+  if (dateFilter === 'week') {
+    const weekAgo = new Date(Date.now() - 7 * 86400000);
+    repairs = repairs.filter(r => new Date(r.date) >= weekAgo);
+  } else if (dateFilter === 'month') {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    repairs = repairs.filter(r => new Date(r.date) >= monthStart);
+  }
+
+  repairs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const subtitle = document.getElementById('garageRepairsSubtitle');
+  if (subtitle) subtitle.textContent = `${repairs.length} record${repairs.length === 1 ? '' : 's'}`;
+
+  const tbody = document.getElementById('garageRepairsList');
+  if (!tbody) return;
+  if (!repairs.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-12 text-center text-gray-400 text-sm">No repairs match your filters.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = repairs.map(r => {
+    const car = getCarById(r.carId);
+    const statusClass = r.status === 'Completed' ? 'status-completed'
+                     : r.status === 'In Progress' ? 'status-progress'
+                     : 'status-pending';
+    return `
+      <tr class="hover:bg-gray-50">
+        <td class="px-6 py-4 font-medium cursor-pointer text-blue-600 hover:underline" onclick="openGarageCarDetail('${r.carId}')">${car ? esc(car.brand + ' ' + car.model) : '—'}</td>
+        <td class="px-6 py-4 text-gray-500 font-mono text-xs">${car ? esc(car.plate || '—') : '—'}</td>
+        <td class="px-6 py-4">${esc(r.title)}</td>
+        <td class="px-6 py-4 text-gray-500">${esc(r.technician || '—')}</td>
+        <td class="px-6 py-4 text-gray-500">${fmtDate(r.date)}</td>
+        <td class="px-6 py-4 font-semibold text-right">${fmtMoney(r.totalCost)}</td>
+        <td class="px-6 py-4"><span class="status-badge ${statusClass}">${esc(r.status)}</span></td>
+        <td class="px-6 py-4"><button onclick="generateRepairPDF('${r.id}')" class="text-xs text-green-600 font-medium hover:underline">PDF</button></td>
+      </tr>`;
+  }).join('');
+}
+
+/* ===========================================================
+   GARAGE — CAR DETAIL
+   =========================================================== */
+let _currentGarageCarId = null;
+
+function openGarageCarDetail(carId) {
+  _currentGarageCarId = carId;
+  showPage('cardetail');
+  renderGarageCarDetail();
+}
+
+function renderGarageCarDetail() {
+  const car = getCarById(_currentGarageCarId);
+  if (!car) { showPage('cars'); return; }
+  const meta = getVehicleTypeMeta(car.type);
+
+  document.getElementById('garageCarTitle').textContent    = `${meta.icon} ${car.brand} ${car.model}`;
+  document.getElementById('garageCarSubtitle').textContent =
+    `${car.plate || '—'} · ${car.year || '—'} · ${car.color || '—'} · Owner: ${car.ownerName || '—'}`;
+
+  // Fields panel
+  const fields = document.getElementById('garageCarFields');
+  if (fields) {
+    fields.innerHTML = `
+      <div><p class="text-gray-400 text-xs mb-1">Brand / Make</p><p class="font-semibold">${esc(car.brand)}</p></div>
+      <div><p class="text-gray-400 text-xs mb-1">Model</p><p class="font-semibold">${esc(car.model)}</p></div>
+      <div><p class="text-gray-400 text-xs mb-1">Year</p><p class="font-semibold">${esc(car.year || '—')}</p></div>
+      <div><p class="text-gray-400 text-xs mb-1">Color</p><p class="font-semibold">${esc(car.color || '—')}</p></div>
+      <div><p class="text-gray-400 text-xs mb-1">Plate Number</p><p class="font-semibold bg-gray-100 inline-block px-2 py-0.5 rounded font-mono">${esc(car.plate || '—')}</p></div>
+      <div><p class="text-gray-400 text-xs mb-1">VIN</p><p class="font-semibold text-gray-500">${esc(car.vin || '—')}</p></div>
+      <div><p class="text-gray-400 text-xs mb-1">Owner</p><p class="font-semibold">${esc(car.ownerName || '—')}</p></div>
+      <div><p class="text-gray-400 text-xs mb-1">Phone</p><p class="font-semibold">${esc(car.ownerPhone || '—')}</p></div>
+      <div><p class="text-gray-400 text-xs mb-1">Last Mileage</p><p class="font-semibold">${(car.lastMileage || 0).toLocaleString()} ${meta.mileageUnit}</p></div>
+    `;
+  }
+
+  // Action buttons
+  const actions = document.getElementById('garageCarActions');
+  if (actions) {
+    actions.innerHTML = `
+      <button onclick="openGarageAddRepair('${car.id}')" class="btn-primary text-center flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Log New Repair
+      </button>
+      <button onclick="generateCarHistoryPDF('${car.id}')" class="btn-green text-center flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Export PDF
+      </button>
+      <button onclick="openEditVehicleForm('${car.id}')" class="btn-secondary text-center">Edit Car Info</button>
+    `;
+  }
+
+  // History timeline
+  const repairs = getRepairsForCar(car.id);
+  document.getElementById('garageCarHistoryTitle').textContent =
+    `Repair History (${repairs.length} record${repairs.length === 1 ? '' : 's'})`;
+  const tl = document.getElementById('garageCarHistory');
+  if (!tl) return;
+  if (!repairs.length) {
+    tl.innerHTML = `<p class="text-gray-400 text-sm text-center py-6">No repair records yet — click "Log New Repair" to add one.</p>`;
+    return;
+  }
+  tl.innerHTML = repairs.map((r, i) => {
+    const dotColor = r.status === 'Completed' ? '#10b981'
+                  : r.status === 'In Progress' ? '#eab308'
+                  : '#94a3b8';
+    const statusClass = r.status === 'Completed' ? 'status-completed'
+                     : r.status === 'In Progress' ? 'status-progress'
+                     : 'status-pending';
+    const itemRows = (r.items || []).map(it => `
+      <tr>
+        <td class="px-3 py-2 ${it.type === 'Labor' ? 'text-orange-600' : 'text-blue-600'} font-medium">${esc(it.type)}</td>
+        <td class="px-3 py-2">${esc(it.description || '')}</td>
+        <td class="px-3 py-2">${esc(it.qty ?? 1)}</td>
+        <td class="px-3 py-2 text-right">${fmtMoney((it.qty || 0) * (it.unitCost || 0))}</td>
+      </tr>`).join('');
+    return `
+      <div class="flex gap-4 ${i < repairs.length - 1 ? 'pb-8' : ''}">
+        <div class="flex flex-col items-center">
+          <div class="timeline-dot" style="background:${dotColor}"></div>
+          ${i < repairs.length - 1 ? '<div class="timeline-line"></div>' : ''}
+        </div>
+        <div class="flex-1 bg-gray-50 rounded-xl p-4 -mt-1">
+          <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
+            <div>
+              <p class="font-semibold text-gray-900">${esc(r.title)}</p>
+              <p class="text-xs text-gray-400 mt-0.5">${fmtDate(r.date)} · ${(r.mileage || 0).toLocaleString()} ${meta.mileageUnit} · Tech: ${esc(r.technician || '—')}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="status-badge ${statusClass}">${esc(r.status)}</span>
+              <span class="font-bold text-gray-900">${fmtMoney(r.totalCost)}</span>
+            </div>
+          </div>
+          ${itemRows ? `
+            <div class="table-wrap">
+              <table class="w-full text-xs border border-gray-200 rounded-lg overflow-hidden" style="min-width:480px">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Type</th>
+                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Description</th>
+                    <th class="px-3 py-2 text-left font-semibold text-gray-500">Qty</th>
+                    <th class="px-3 py-2 text-right font-semibold text-gray-500">Cost</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">${itemRows}</tbody>
+              </table>
+            </div>` : ''}
+          <div class="flex gap-2 mt-3">
+            <button onclick="generateRepairPDF('${r.id}')" class="text-xs text-green-600 hover:underline ml-auto">Print PDF</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ===========================================================
+   GARAGE — LOG REPAIR FORM
+   =========================================================== */
+let _currentGarageRepairCarId = null;
+
+function openGarageAddRepair(carId) {
+  // If no carId, default to the first vehicle (or block if no vehicles)
+  if (!carId) {
+    const store = getCurrentStore();
+    const cars  = store ? getCarsForGarage(store.id) : [];
+    if (!cars.length) {
+      alert('Add a vehicle first before logging a repair.');
+      showPage('cars');
+      return;
+    }
+    carId = cars[0].id;
+  }
+  _currentGarageRepairCarId = carId;
+  showPage('addrepair');
+  populateGarageRepairForm();
+}
+
+function populateGarageRepairForm() {
+  const store = getCurrentStore();
+  if (!store) return;
+  const cars = getCarsForGarage(store.id);
+
+  // If no vehicles, redirect to cars page
+  if (!cars.length) {
+    alert('Add a vehicle first before logging a repair.');
+    showPage('cars');
+    return;
+  }
+
+  // Pick a default car if none selected yet
+  if (!_currentGarageRepairCarId || !cars.find(c => c.id === _currentGarageRepairCarId)) {
+    _currentGarageRepairCarId = cars[0].id;
+  }
+  const car = getCarById(_currentGarageRepairCarId);
+
+  // Vehicle dropdown
+  const carSelect = document.getElementById('grfCarId');
+  if (carSelect) {
+    carSelect.innerHTML = cars.map(c =>
+      `<option value="${c.id}" ${c.id === _currentGarageRepairCarId ? 'selected' : ''}>${esc(c.brand + ' ' + c.model + ' — ' + (c.plate || 'no plate'))}</option>`
+    ).join('');
+    carSelect.onchange = () => {
+      _currentGarageRepairCarId = carSelect.value;
+      const c = getCarById(carSelect.value);
+      if (c) {
+        document.getElementById('garageRepairSubtitle').textContent = `${c.brand} ${c.model} — ${c.plate || '—'}`;
+        const m = document.querySelector('#garageRepairFormEl [name="mileage"]');
+        if (m) m.value = c.lastMileage || '';
+      }
+    };
+  }
+
+  // Subtitle
+  document.getElementById('garageRepairSubtitle').textContent = `${car.brand} ${car.model} — ${car.plate || '—'}`;
+
+  // Reset form fields
+  const form = document.getElementById('garageRepairFormEl');
+  if (form) {
+    form.querySelector('[name="date"]').value       = new Date().toISOString().slice(0, 10);
+    form.querySelector('[name="title"]').value      = '';
+    form.querySelector('[name="mileage"]').value    = car.lastMileage || '';
+    form.querySelector('[name="status"]').value     = 'In Progress';
+    form.querySelector('[name="technician"]').value = '';
+    form.querySelector('[name="notes"]').value      = '';
+  }
+  const err = document.getElementById('garageRepairFormError');
+  if (err) err.classList.remove('show');
+
+  // Reset items rows: clear and seed two empty ones
+  const tbody = document.getElementById('repairRows');
+  if (tbody) {
+    tbody.innerHTML = '';
+    addRepairRow();
+    addRepairRow();
+    updateTotal();
+  }
+}
+
+async function handleGarageRepairSubmit() {
+  const form = document.getElementById('garageRepairFormEl');
+  const fd   = new FormData(form);
+  const errBox = document.getElementById('garageRepairFormError');
+  errBox.classList.remove('show');
+
+  const car = getCarById(fd.get('carId') || _currentGarageRepairCarId);
+  if (!car) { errBox.textContent = 'Pick a vehicle.'; errBox.classList.add('show'); return; }
+
+  // Collect items
+  const items = [];
+  document.querySelectorAll('#repairRows tr').forEach(tr => {
+    const type = tr.querySelector('select')?.value || 'Part';
+    const desc = tr.querySelector('input[type="text"]')?.value || '';
+    const qty  = parseFloat(tr.querySelector('.qty-input')?.value)   || 0;
+    const unit = parseFloat(tr.querySelector('.price-input')?.value) || 0;
+    if (desc.trim() && (qty > 0 || unit > 0)) {
+      items.push({ type, description: desc.trim(), qty, unitCost: unit });
+    }
+  });
+
+  const totalCost = items.reduce((s, it) => s + it.qty * it.unitCost, 0);
+  const store = getCurrentStore();
+
+  try {
+    await addRepair({
+      carId:      car.id,
+      garageId:   store.id,
+      date:       fd.get('date'),
+      mileage:    fd.get('mileage'),
+      status:     fd.get('status'),
+      title:      fd.get('title'),
+      technician: fd.get('technician'),
+      totalCost,
+      notes:      fd.get('notes'),
+      items
+    });
+    _currentGarageCarId = car.id;
+    showPage('cardetail');
+    renderGarageCarDetail();
+  } catch (err) {
+    errBox.textContent = err.message;
+    errBox.classList.add('show');
+  }
+}
+
+function cancelGarageRepair() {
+  if (_currentGarageCarId) {
+    showPage('cardetail');
+    renderGarageCarDetail();
+  } else {
+    showPage('repairs');
+    renderGarageRepairsList();
+  }
+}
+
+/* ===========================================================
+   GARAGE PDFs — single repair + full car history
+   =========================================================== */
+function generateRepairPDF(repairId) {
+  const repair = _cache.repairs.find(r => r.id === repairId);
+  if (!repair) { alert('Repair not found.'); return; }
+  const car = getCarById(repair.carId);
+  if (!car) { alert('Vehicle not found.'); return; }
+  const store = getCurrentStore();
+  const meta  = getVehicleTypeMeta(car.type);
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 220, 30, 'F');
+  doc.setTextColor(255);
+  doc.setFontSize(18); doc.setFont(undefined, 'bold');
+  doc.text('AutoTrack — Repair Report', 14, 18);
+
+  doc.setTextColor(40); doc.setFontSize(10); doc.setFont(undefined, 'normal');
+  doc.setFillColor(245, 247, 250);
+  doc.roundedRect(14, 36, 182, 38, 3, 3, 'F');
+  doc.setFont(undefined, 'bold');
+  doc.text('Vehicle Information', 20, 46);
+  doc.setFont(undefined, 'normal'); doc.setFontSize(9);
+  doc.text(`${meta.label}: ${car.brand} ${car.model}`, 20, 54);
+  doc.text(`Plate: ${car.plate || '—'}`, 20, 61);
+  doc.text(`Year / Color: ${car.year || '—'} · ${car.color || '—'}`, 20, 68);
+  doc.text(`Owner: ${car.ownerName || '—'}`, 105, 54);
+  doc.text(`Phone: ${car.ownerPhone || '—'}`, 105, 61);
+  doc.text(`Mileage: ${(repair.mileage || car.lastMileage || 0).toLocaleString()} ${meta.mileageUnit}`, 105, 68);
+
+  doc.setFontSize(11); doc.setFont(undefined, 'bold');
+  doc.text(`Repair: ${repair.title}`, 14, 84);
+  doc.setFont(undefined, 'normal'); doc.setFontSize(9);
+  doc.text(`Date: ${fmtDate(repair.date)}`, 14, 91);
+  doc.text(`Technician: ${repair.technician || '—'}`, 80, 91);
+  doc.text(`Status: ${repair.status}`, 150, 91);
+
+  const body = (repair.items || []).map(it => [
+    it.type, it.description || '', String(it.qty ?? 1),
+    fmtMoney(it.unitCost), fmtMoney((it.qty || 0) * (it.unitCost || 0))
+  ]);
+  doc.autoTable({
+    startY: 97,
+    head:   [['Type', 'Description', 'Qty', 'Unit Cost', 'Total']],
+    body:   body.length ? body : [['—', 'No line items', '—', '—', '—']],
+    foot:   [['', '', '', 'TOTAL', fmtMoney(repair.totalCost)]],
+    headStyles: { fillColor: [37, 99, 235], fontSize: 9 },
+    footStyles: { fillColor: [240, 245, 255], fontStyle: 'bold', fontSize: 10 },
+    bodyStyles: { fontSize: 9 },
+    columnStyles: { 4: { halign: 'right' }, 3: { halign: 'right' } },
+    margin: { left: 14, right: 14 }
+  });
+
+  if (repair.notes) {
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(9); doc.setTextColor(100);
+    doc.text('Notes: ' + repair.notes, 14, finalY, { maxWidth: 182 });
+  }
+
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 285, 220, 15, 'F');
+  doc.setTextColor(255); doc.setFontSize(8);
+  const garageName = store ? store.storeName : 'AutoTrack';
+  doc.text(`${garageName} · Generated ${new Date().toLocaleDateString()}`, 14, 294);
+
+  doc.save(`repair-${(car.plate || car.id).replace(/\s+/g, '')}-${repair.date}.pdf`);
+}
+
+function generateCarHistoryPDF(carId) {
+  const car = getCarById(carId);
+  if (!car) return;
+  const repairs = getRepairsForCar(car.id);
+  const store = getCurrentStore();
+  const meta  = getVehicleTypeMeta(car.type);
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, 220, 30, 'F');
+  doc.setTextColor(255); doc.setFontSize(18); doc.setFont(undefined, 'bold');
+  doc.text('AutoTrack — Vehicle History', 14, 18);
+
+  doc.setTextColor(40); doc.setFontSize(10); doc.setFont(undefined, 'normal');
+  doc.setFillColor(245, 247, 250);
+  doc.roundedRect(14, 36, 182, 38, 3, 3, 'F');
+  doc.setFont(undefined, 'bold');
+  doc.text('Vehicle Information', 20, 46);
+  doc.setFont(undefined, 'normal'); doc.setFontSize(9);
+  doc.text(`${meta.label}: ${car.brand} ${car.model}`, 20, 54);
+  doc.text(`Plate: ${car.plate || '—'}`, 20, 61);
+  doc.text(`Year / Color: ${car.year || '—'} · ${car.color || '—'}`, 20, 68);
+  doc.text(`Owner: ${car.ownerName || '—'}`, 105, 54);
+  doc.text(`Phone: ${car.ownerPhone || '—'}`, 105, 61);
+  doc.text(`Last Mileage: ${(car.lastMileage || 0).toLocaleString()} ${meta.mileageUnit}`, 105, 68);
+
+  doc.setFontSize(11); doc.setFont(undefined, 'bold');
+  doc.text(`Repair History (${repairs.length} record${repairs.length === 1 ? '' : 's'})`, 14, 84);
+
+  const rows = repairs.map(r => [
+    fmtDate(r.date), r.title,
+    (r.mileage || 0).toLocaleString() + ' ' + meta.mileageUnit,
+    r.status, fmtMoney(r.totalCost)
+  ]);
+  doc.autoTable({
+    startY: 90,
+    head:   [['Date', 'Service', 'Mileage', 'Status', 'Cost']],
+    body:   rows.length ? rows : [['—', 'No repairs yet', '—', '—', '—']],
+    foot:   [['', '', '', 'TOTAL', fmtMoney(repairs.reduce((s, r) => s + Number(r.totalCost || 0), 0))]],
+    headStyles: { fillColor: [37, 99, 235], fontSize: 9 },
+    footStyles: { fillColor: [240, 245, 255], fontStyle: 'bold', fontSize: 10 },
+    bodyStyles: { fontSize: 9 },
+    columnStyles: { 4: { halign: 'right' } },
+    margin: { left: 14, right: 14 }
+  });
+
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 285, 220, 15, 'F');
+  doc.setTextColor(255); doc.setFontSize(8);
+  const garageName = store ? store.storeName : 'AutoTrack';
+  doc.text(`${garageName} · Generated ${new Date().toLocaleDateString()}`, 14, 294);
+
+  doc.save(`vehicle-history-${(car.plate || car.id).replace(/\s+/g, '')}.pdf`);
 }
