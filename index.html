@@ -687,6 +687,101 @@
   </div>
 
   <!-- =========================================================
+       CUSTOMER ADD-REPAIR PAGE
+       Lets a customer record a repair done by a garage on their vehicle.
+       Garage is picked from a dropdown; a new garage name can be added inline.
+       ========================================================= -->
+  <div id="page-customer-add-repair" class="page">
+    <div class="flex items-center gap-3 mb-6">
+      <button onclick="cancelCustomerRepair()" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div>
+        <h1 class="page-title text-2xl font-bold text-gray-900">Log a Repair</h1>
+        <p id="customerRepairSubtitle" class="text-gray-500 text-sm">—</p>
+      </div>
+    </div>
+
+    <form id="customerRepairFormEl" class="max-w-3xl space-y-5" onsubmit="event.preventDefault(); handleCustomerRepairSubmit();">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 card-padded">
+        <p class="text-sm font-semibold text-gray-700 mb-4">Where + when</p>
+        <div class="repair-form-grid grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Garage / Workshop *</label>
+            <select name="garageId" id="crfGarageId" required onchange="onCustomerGarageChange()"></select>
+            <div id="crfNewGarageBox" style="display:none;margin-top:8px;">
+              <input type="text" id="crfNewGarageName" placeholder="Type the garage name (e.g. Joe's Auto Care)"/>
+              <p class="text-[11px] text-gray-400 mt-1">We'll save the name with your record. The garage may not be on AutoTrack yet — that's OK.</p>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Date *</label>
+            <input type="date" name="date" id="crfDate" required/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Status</label>
+            <select name="status">
+              <option>In Progress</option>
+              <option>Completed</option>
+              <option>Pending</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Service Title *</label>
+            <input type="text" name="title" placeholder="e.g. Oil change + brake check" required/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Mileage (at time of repair)</label>
+            <input type="number" name="mileage" placeholder="e.g. 82450"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 card-padded">
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-sm font-semibold text-gray-700">What was done</p>
+          <button type="button" onclick="addRepairRow()" class="btn-secondary text-xs py-1.5 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Row
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="w-full text-sm" style="min-width:560px">
+            <thead>
+              <tr class="border-b border-gray-100">
+                <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase w-24">Type</th>
+                <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase">Description</th>
+                <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase w-20">Qty</th>
+                <th class="pb-2 text-left text-xs font-semibold text-gray-400 uppercase w-28">Unit Cost ($)</th>
+                <th class="pb-2 text-right text-xs font-semibold text-gray-400 uppercase w-24">Total</th>
+                <th class="w-8"></th>
+              </tr>
+            </thead>
+            <tbody id="repairRows"></tbody>
+          </table>
+        </div>
+        <div class="flex justify-end mt-4 pt-4 border-t border-gray-100">
+          <div class="text-right">
+            <p class="text-xs text-gray-400">Total Cost</p>
+            <p class="text-2xl font-bold text-gray-900" id="grandTotal">$0.00</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 card-padded">
+        <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase">Notes / Remarks</label>
+        <textarea name="notes" rows="3" placeholder="Anything to remember about this repair..."></textarea>
+      </div>
+
+      <div id="customerRepairFormError" class="auth-error" style="margin-bottom:0;"></div>
+      <div class="flex gap-3 flex-wrap">
+        <button type="button" onclick="cancelCustomerRepair()" class="btn-secondary">Cancel</button>
+        <button type="submit" class="btn-primary">Save Repair</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- =========================================================
        CUSTOMER ALERTS PAGE
        ========================================================= -->
   <div id="page-customer-alerts" class="page">
