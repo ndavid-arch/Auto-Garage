@@ -242,11 +242,7 @@ function calcRow(input) {
   const row = input.closest('tr');
   const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
   const price = parseFloat(row.querySelector('.price-input').value) || 0;
-  row.querySelector('.row-total').textContent = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'RWF',
-    maximumFractionDigits: 0
-  }).format(qty * price);
+  row.querySelector('.row-total').textContent = 'RWF ' + (qty * price).toFixed(0);
   updateTotal();
 }
 
@@ -257,11 +253,7 @@ function updateTotal() {
   });
   const grandTotal = document.getElementById('grandTotal');
   if (grandTotal) {
-    grandTotal.textContent = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'RWF',
-      maximumFractionDigits: 0
-    }).format(total);
+    grandTotal.textContent = 'RWF ' + total.toFixed(0);
   }
 }
 
