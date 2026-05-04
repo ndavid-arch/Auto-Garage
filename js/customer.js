@@ -41,7 +41,13 @@ function fmtDate(s) {
   if (!s) return '—';
   return new Date(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
-function fmtMoney(n) { return '$' + Number(n || 0).toFixed(0); }
+function fmtMoney(n) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'RWF',
+    maximumFractionDigits: 0
+  }).format(Number(n || 0));
+}
 
 function vehicleMeta(v) { return getVehicleTypeMeta(v.type); }
 function vehicleIcon(v) { return vehicleMeta(v).icon; }
@@ -1215,7 +1221,7 @@ function renderGarageDashboard(store) {
                       sub: 'In progress',                                tint: 'yellow', icon: 'clock'  }),
       _statCardHtml({ label: 'Completed',    value: completed,
                       sub: 'All time',                                   tint: 'green',  icon: 'check'  }),
-      _statCardHtml({ label: 'Revenue',      value: '$' + revenueThisMonth.toLocaleString(undefined, { maximumFractionDigits: 0 }),
+      _statCardHtml({ label: 'Revenue',      value: fmtMoney(revenueThisMonth),
                       sub: 'This month',                                 tint: 'purple', icon: 'dollar' })
     ].join('');
   }
