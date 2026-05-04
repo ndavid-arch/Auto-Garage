@@ -210,7 +210,16 @@ function closeSidebar() {
 
 /* ---------- DYNAMIC REPAIR ROWS ---------- */
 function addRepairRow() {
-  const tbody = document.getElementById('repairRows');
+  // Find which repair form is currently active
+  let tbody = null;
+  if (document.getElementById('page-addrepair')?.classList.contains('active')) {
+    tbody = document.getElementById('garageRepairRows');
+  } else if (document.getElementById('page-customer-add-repair')?.classList.contains('active')) {
+    tbody = document.getElementById('customerRepairRows');
+  }
+  
+  if (!tbody) return; // No active repair form found
+  
   const row = document.createElement('tr');
   row.className = 'repair-row border-b border-gray-50';
   row.innerHTML = `
