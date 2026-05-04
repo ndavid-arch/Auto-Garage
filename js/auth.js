@@ -306,6 +306,52 @@ async function deleteVehicleHard(id) {
   return true;
 }
 
+/* ---------- REPAIR CRUD ---------- */
+async function addRepair({
+  carId, garageId, date, mileage, status, title, technician,
+  totalCost, notes, items
+}) {
+  if (!carId)             throw new Error('Vehicle is required.');
+  if (!date)              throw new Error('Date is required.');
+  if (!title || !title.trim()) throw new Error('Service title is required.');
+
+  const repairRow = {
+    car_id:     carId,
+    garage_id:  garageId || null,
+    date,
+    mileage:    (mileage === '' || mileage == null) ? null : Number(mileage),
+    status:     status || 'In Progress',
+    title:      title.trim(),
+    technician: (technician || '').trim(),
+    total_cost: Number(totalCost) || 0,
+    notes:      (notes || '').trim()
+  };
+
+  const { data: repair, error } = await sb.from('repairs')
+    .insert(repairRow).select().single();
+  if (error) throw new Error(error.message);
+
+  // Insert line items (if any)
+  let savedItems = [];
+  if (items && items.length) {
+    const itemRows = items.map(it => ({
+      repair_id:   repair.id,
+      type:        it.type,
+      description: (it.description || '').trim(),
+      qty:         Number(it.qty) || 0,
+      unit_cost:   Number(it.unitCost) || 0
+    }));
+    const { data: insertedItems, error: itemErr } = await sb
+      .from('repair_items').insert(itemRows).select();
+    if (itemErr) throw new Error(itemErr.message);
+    savedItems = (insertedItems || []).map(snakeToCamel);
+  }
+
+  const cached = { ...snakeToCamel(repair), items: savedItems };
+  _cache.repairs.push(cached);
+  return cached;
+}
+
 /* Garage "claims" an existing customer-added vehicle when the garage
    tries to add a vehicle whose plate already exists. */
 async function claimVehicle(carId, garageId) {
