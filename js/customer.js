@@ -49,6 +49,46 @@ function fmtMoney(n) {
   }).format(Number(n || 0));
 }
 
+function buildRepairHistoryRowsWithDetails(repairs, mileageUnit) {
+  const rows = [];
+
+  for (const r of repairs) {
+    rows.push([
+      fmtDate(r.date),
+      r.title,
+      (r.mileage || 0).toLocaleString() + ' ' + mileageUnit,
+      r.status,
+      fmtMoney(r.totalCost)
+    ]);
+
+    const items = Array.isArray(r.items) ? r.items : [];
+    if (!items.length) continue;
+
+    const nonVatItems = items.filter(it => String(it.type || '').toLowerCase() !== 'vat');
+    const vatItems = items.filter(it => String(it.type || '').toLowerCase() === 'vat');
+
+    for (const it of nonVatItems) {
+      const qty = Number(it.qty || 0) || 0;
+      const lineTotal = qty * (Number(it.unitCost || 0) || 0);
+      rows.push(['', '  ' + (it.description || 'Item'), String(qty || 1), '', fmtMoney(lineTotal)]);
+    }
+
+    rows.push(['', '', '', '', '']);
+
+    if (vatItems.length) {
+      const vatTotal = vatItems.reduce((sum, it) => {
+        const qty = Number(it.qty || 0) || 0;
+        return sum + qty * (Number(it.unitCost || 0) || 0);
+      }, 0);
+      const vatLabel = 'VAT 18%';
+      const vatQty = vatItems.reduce((sum, it) => sum + (Number(it.qty || 0) || 0), 0) || 1;
+      rows.push(['', '  ' + vatLabel, String(vatQty), '', fmtMoney(vatTotal)]);
+    }
+  }
+
+  return rows;
+}
+
 function vehicleMeta(v) { return getVehicleTypeMeta(v.type); }
 function vehicleIcon(v) { return vehicleMeta(v).icon; }
 function vehicleMileageLabel(v) {
@@ -968,10 +1008,7 @@ function generateCustomerVehiclePDF() {
   doc.setFont(undefined, 'bold');
   doc.text(`Repair History (${repairs.length} records)`, 14, 84);
 
-  const rows = [];
-  for (const r of repairs) {
-    rows.push([fmtDate(r.date), r.title, (r.mileage || 0).toLocaleString() + ' ' + meta.mileageUnit, r.status, fmtMoney(r.totalCost)]);
-  }
+  const rows = buildRepairHistoryRowsWithDetails(repairs, meta.mileageUnit);
 
   doc.autoTable({
     startY: 90,
@@ -979,7 +1016,7 @@ function generateCustomerVehiclePDF() {
     body: rows.length ? rows : [['—', 'No repairs yet', '—', '—', '—']],
     foot: [['', '', '', 'TOTAL', fmtMoney(repairs.reduce((s, r) => s + Number(r.totalCost || 0), 0))]],
     headStyles: { fillColor: [37, 99, 235], fontSize: 9 },
-    footStyles: { fillColor: [240, 245, 255], fontStyle: 'bold', fontSize: 10 },
+    footStyles: { fillColor: [240, 245, 255], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 10 },
     bodyStyles: { fontSize: 9 },
     columnStyles: { 4: { halign: 'right' } },
     margin: { left: 14, right: 14 }
@@ -1133,6 +1170,7 @@ async function handleCustomerRepairSubmit() {
   const totalCost = items.reduce((s, it) => s + it.qty * it.unitCost, 0);
 
   try {
+    await updateVehicle(car.id, { garageId });
     await addRepair({
       carId:       car.id,
       garageId,
@@ -1701,18 +1739,14 @@ function generateCarHistoryPDF(carId) {
   doc.setFontSize(11); doc.setFont(undefined, 'bold');
   doc.text(`Repair History (${repairs.length} record${repairs.length === 1 ? '' : 's'})`, 14, 84);
 
-  const rows = repairs.map(r => [
-    fmtDate(r.date), r.title,
-    (r.mileage || 0).toLocaleString() + ' ' + meta.mileageUnit,
-    r.status, fmtMoney(r.totalCost)
-  ]);
+  const rows = buildRepairHistoryRowsWithDetails(repairs, meta.mileageUnit);
   doc.autoTable({
     startY: 90,
     head:   [['Date', 'Service', 'Mileage', 'Status', 'Cost']],
     body:   rows.length ? rows : [['—', 'No repairs yet', '—', '—', '—']],
     foot:   [['', '', '', 'TOTAL', fmtMoney(repairs.reduce((s, r) => s + Number(r.totalCost || 0), 0))]],
     headStyles: { fillColor: [37, 99, 235], fontSize: 9 },
-    footStyles: { fillColor: [240, 245, 255], fontStyle: 'bold', fontSize: 10 },
+    footStyles: { fillColor: [240, 245, 255], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 10 },
     bodyStyles: { fontSize: 9 },
     columnStyles: { 4: { halign: 'right' } },
     margin: { left: 14, right: 14 }
