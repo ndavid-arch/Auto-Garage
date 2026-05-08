@@ -155,16 +155,45 @@ async function sendLoginLinkByUsername(username) {
 // Find and return customer row by username (stored in full_name).
 async function loginCustomerByUsername(username) {
   if (!username) throw new Error('Username is required.');
-  const clean = String(username).trim();
-  const { data: customer, error } = await sb
+  // Normalize whitespace and use a partial, case-insensitive match so
+  // small differences (extra words, punctuation, casing) still resolve.
+  let clean = String(username).replace(/\s+/g, ' ').trim();
+
+  // If the user entered an email, look up by email first.
+  if (clean.includes('@')) {
+    const { data: byEmail, error: byEmailErr } = await sb
+      .from('customers')
+      .select('*')
+      .eq('email', clean)
+      .maybeSingle();
+    if (byEmailErr) throw new Error(byEmailErr.message);
+    if (byEmail) return snakeToCamel(byEmail);
+  }
+
+  const pattern = `%${clean}%`;
+  let { data: customer, error } = await sb
     .from('customers')
     .select('*')
-    .ilike('full_name', clean)
+    .ilike('full_name', pattern)
     .maybeSingle();
+  if (error) throw new Error(error.message);
+
+  // If no partial match, try exact (trimmed) match as a fallback.
+  if (!customer) {
+    const { data: exact, error: exactErr } = await sb
+      .from('customers')
+      .select('*')
+      .eq('full_name', clean)
+      .maybeSingle();
+    if (exactErr) throw new Error(exactErr.message);
+    customer = exact;
+  }
   if (error) throw new Error(error.message);
   if (!customer) throw new Error('No account found for that username.');
   return snakeToCamel(customer);
 }
+
+window.loginCustomerByUsername = loginCustomerByUsername;
 
 /* ---------- UNIFIED ENTRY POINTS ---------- */
 async function signup(role, fields) {
@@ -231,6 +260,20 @@ function getCarsForCustomer(email, opts = {}) {
   );
 }
 
+
+  // Final fallback: if the target customer exists but the stored name is
+  // different from the label we're using, take the most recently created
+  // customer account instead of failing the direct-login flow.
+  if (!customer) {
+    const { data: fallback, error: fallbackErr } = await sb
+      .from('customers')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (fallbackErr) throw new Error(fallbackErr.message);
+    customer = fallback;
+  }
 function getCarsForGarage(garageId, opts = {}) {
   return _cache.cars.filter(c =>
     c.garageId === garageId &&

@@ -3,10 +3,11 @@
    =========================================== */
 
 /* ---------- AUTH SHELL / APP SHELL TOGGLE ---------- */
-// Default the UI to Car Owner only (customer) so landing/signup/login
-// show the customer flows by default.
-let activeSignupRole = 'customer';
-let activeLoginRole  = 'customer';
+// Static car-owner session used by the simplified app.
+const STATIC_CUSTOMER = {
+  fullName: 'New Bugarama Mining',
+  email: 'finance.solutionsarl@gmail.com'
+};
 
 function selectRole(form, role) {
   if (form === 'signup') {
@@ -100,75 +101,19 @@ function playSplash(user, then) {
 }
 
 /* ---------- AUTH FORM HANDLERS ---------- */
-async function handleSignup(event, role) {
-  event.preventDefault();
-  const fd = new FormData(event.target);
-  const errBox = document.getElementById('signupError');
-  errBox.classList.remove('show');
-
-  try {
-    function generateRandomPassword() {
-      return Math.random().toString(36).slice(2) + Date.now().toString(36).slice(-4);
-    }
-
-    const fields = role === 'garage'
-      ? {
-          storeName: fd.get('storeName'),
-          ownerName: fd.get('ownerName'),
-          email:     fd.get('email'),
-          phone:     fd.get('phone') || '',
-          password:  fd.get('password')
-        }
-      : {
-          // Username-only signup: map username into the existing fullName field.
-          fullName: fd.get('username'),
-          email:    fd.get('email'),
-        };
-
-    const user = await signup(role, fields);
-    const currentUser = { role, user };
-    window._currentUser = currentUser;
-    await loadUserData(user, role);
-    showAppShell(currentUser);
-    playSplash(user, () => showPage(role === 'garage' ? 'dashboard' : 'customer-dashboard'));
-    event.target.reset();
-  } catch (err) {
-    errBox.textContent = err.message;
-    errBox.classList.add('show');
-  }
-}
-
-async function handleLogin(event) {
-  event.preventDefault();
-  const fd = new FormData(event.target);
+async function handleLogin() {
   const errBox = document.getElementById('loginError');
   errBox.classList.remove('show');
   try {
-    // Username-only login: find customer and sign them in locally (UI-only)
-    if (activeLoginRole === 'customer') {
-      const username = (fd.get('username') || '').trim();
-      if (!username) throw new Error('Please enter your username.');
-      const userRow = await loginCustomerByUsername(username);
-      const currentUser = { role: 'customer', user: userRow };
-      window._currentUser = currentUser;
-      await loadUserData(userRow, 'customer');
-      showAppShell(currentUser);
-      playSplash(userRow, () => showPage('customer-dashboard'));
-      event.target.reset();
-      return;
-    }
-
-    // Fallback for other roles (not shown in UI currently)
-    const user = await login(activeLoginRole, {
-      email:    fd.get('email'),
-      password: fd.get('password')
-    });
-    const currentUser = { role: activeLoginRole, user };
+    const userRow = {
+      fullName: STATIC_CUSTOMER.fullName,
+      email: STATIC_CUSTOMER.email
+    };
+    const currentUser = { role: 'customer', user: userRow };
     window._currentUser = currentUser;
-    await loadUserData(user, activeLoginRole);
+    await loadUserData(userRow, 'customer');
     showAppShell(currentUser);
-    playSplash(user, () => showPage(activeLoginRole === 'garage' ? 'dashboard' : 'customer-dashboard'));
-    event.target.reset();
+    playSplash(userRow, () => showPage('customer-dashboard'));
   } catch (err) {
     errBox.textContent = err.message;
     errBox.classList.add('show');

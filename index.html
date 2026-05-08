@@ -51,8 +51,7 @@
       <h1>AutoTrack</h1>
       <p>Track repairs, manage parts, and print professional PDF reports — for your shop, your customers, your records.</p>
       <div class="landing-cta">
-        <button onclick="showAuthPage('signup')" class="btn-primary">Sign Up</button>
-        <button onclick="showAuthPage('login')" class="btn-secondary">Log In</button>
+        <button onclick="showAuthPage('login')" class="btn-primary">Log In</button>
       </div>
       <div class="landing-features">
         <div class="feature-card">
@@ -71,41 +70,6 @@
     </div>
   </div>
 
-  <!-- Signup -->
-  <div id="auth-signup" class="auth-page">
-    <div class="auth-card">
-      <div class="auth-logo">
-        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0M3 17V7a2 2 0 012-2h8l4 4v8"/>
-        </svg>
-      </div>
-      <h2 class="auth-title">Create an Account</h2>
-      <p class="auth-subtitle">Create your Car Owner account. Only a username and email are required.</p>
-
-      <div id="signupError" class="auth-error"></div>
-
-      <!-- CUSTOMER form (only) -->
-      <form id="signupFormCustomer" class="signup-form-role" data-role="customer" onsubmit="handleSignup(event,'customer')">
-        <div class="auth-field">
-          <label>Username *</label>
-          <input type="text" name="username" placeholder="e.g. johndoe" required/>
-        </div>
-        <div class="auth-field">
-          <label>Email *</label>
-          <input type="email" name="email" placeholder="you@example.com" required/>
-          <p style="font-size:11px;color:#64748b;margin:6px 0 0;">
-            Use the same email your garage has on file — your cars will appear automatically.
-          </p>
-        </div>
-        <button type="submit" class="btn-primary btn-full" style="margin-top:6px;">Create Customer Account</button>
-      </form>
-
-      <p style="text-align:center;margin:18px 0 0;font-size:13px;color:#64748b;">
-        Already have an account? <span class="auth-link" onclick="showAuthPage('login')">Log in</span>
-      </p>
-    </div>
-  </div>
-
   <!-- Login -->
   <div id="auth-login" class="auth-page">
     <div class="auth-card">
@@ -115,22 +79,13 @@
         </svg>
       </div>
       <h2 class="auth-title">Welcome Back</h2>
-      <p class="auth-subtitle">Log in with your username — we'll send a login link to your email.</p>
+      <p class="auth-subtitle">Click Login to enter the New Bugarama Mining account.</p>
 
       <div id="loginError" class="auth-error"></div>
 
-      <form id="loginForm" onsubmit="handleLogin(event)">
-        <div class="auth-field">
-          <label>Username</label>
-          <input type="text" name="username" placeholder="your username" required/>
-        </div>
+      <button type="button" class="btn-primary btn-full" style="margin-top:6px;" onclick="handleLogin()">Login</button>
 
-        <button type="submit" class="btn-primary btn-full" style="margin-top:6px;">Login</button>
-      </form>
-
-      <p style="text-align:center;margin:18px 0 0;font-size:13px;color:#64748b;">
-        New here? <span class="auth-link" onclick="showAuthPage('signup')">Create an account</span>
-      </p>
+      <p style="text-align:center;margin:18px 0 0;font-size:13px;color:#64748b;">&nbsp;</p>
     </div>
   </div>
 </div>
