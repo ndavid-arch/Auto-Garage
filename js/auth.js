@@ -70,24 +70,47 @@ async function loginStore({ email, password }) {
 }
 
 /* ---------- AUTH — CUSTOMER ---------- */
-async function signupCustomer({ fullName, email, phone, password }) {
+async function signupCustomer({ fullName, email, password }) {
   const safePassword = password || Math.random().toString(36).slice(2) + Date.now().toString(36).slice(-4);
   if (safePassword.length < 6) throw new Error('Password must be at least 6 characters.');
 
   const cleanEmail = email.trim().toLowerCase();
+
+  const { data: existingCustomer } = await sb
+    .from('customers')
+    .select('id')
+    .eq('email', cleanEmail)
+    .maybeSingle();
+  if (existingCustomer) {
+    throw new Error('That email is already linked to a customer profile.');
+  }
+
+  const { data: existingStore } = await sb
+    .from('stores')
+    .select('id')
+    .eq('email', cleanEmail)
+    .maybeSingle();
+  if (existingStore) {
+    throw new Error('That email is already linked to a garage account. Use a different email for the car owner account.');
+  }
+
   const { data: auth, error: authErr } = await sb.auth.signUp({
     email: cleanEmail,
     password: safePassword,
     options: { data: { role: 'customer' } }
   });
-  if (authErr) throw new Error(authErr.message);
+  if (authErr) {
+    if (/already registered/i.test(authErr.message || '')) {
+      throw new Error('That email is already registered in Supabase Auth. It may belong to a previous signup attempt or an existing auth account.');
+    }
+    throw new Error(authErr.message);
+  }
   if (!auth.user) throw new Error('Signup failed — please try again.');
 
   const { data, error } = await sb.from('customers').insert({
     id:               auth.user.id,
     full_name:        fullName.trim(),
     email:            cleanEmail,
-    phone:            (phone || '').trim(),
     notify_by_email:  true
   }).select().single();
   if (error) throw new Error(error.message);
