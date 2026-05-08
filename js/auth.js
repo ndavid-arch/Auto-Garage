@@ -31,7 +31,7 @@ function getVehicleTypeMeta(type) {
 
 /* ---------- AUTH — STORE (GARAGE) ---------- */
 async function signupStore({ storeName, ownerName, email, phone, password }) {
-  if (password.length < 6) throw new Error('Password must be at least 6 characters.');
+  if (!password || password.length < 6) throw new Error('Password must be at least 6 characters.');
 
   const cleanEmail = email.trim().toLowerCase();
   const { data: auth, error: authErr } = await sb.auth.signUp({
@@ -71,12 +71,13 @@ async function loginStore({ email, password }) {
 
 /* ---------- AUTH — CUSTOMER ---------- */
 async function signupCustomer({ fullName, email, phone, password }) {
-  if (password.length < 6) throw new Error('Password must be at least 6 characters.');
+  const safePassword = password || Math.random().toString(36).slice(2) + Date.now().toString(36).slice(-4);
+  if (safePassword.length < 6) throw new Error('Password must be at least 6 characters.');
 
   const cleanEmail = email.trim().toLowerCase();
   const { data: auth, error: authErr } = await sb.auth.signUp({
     email: cleanEmail,
-    password,
+    password: safePassword,
     options: { data: { role: 'customer' } }
   });
   if (authErr) throw new Error(authErr.message);
@@ -126,6 +127,20 @@ async function sendLoginLinkByUsername(username) {
   const { data, error: otpErr } = await sb.auth.signInWithOtp({ email: customer.email });
   if (otpErr) throw new Error(otpErr.message || 'Failed to send login link.');
   return { email: customer.email, data };
+}
+
+// Find and return customer row by username (stored in full_name).
+async function loginCustomerByUsername(username) {
+  if (!username) throw new Error('Username is required.');
+  const clean = String(username).trim();
+  const { data: customer, error } = await sb
+    .from('customers')
+    .select('*')
+    .ilike('full_name', clean)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!customer) throw new Error('No account found for that username.');
+  return snakeToCamel(customer);
 }
 
 /* ---------- UNIFIED ENTRY POINTS ---------- */

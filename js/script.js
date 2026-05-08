@@ -120,12 +120,9 @@ async function handleSignup(event, role) {
           password:  fd.get('password')
         }
       : {
-          // We treat the username as `fullName` in the DB model to avoid
-          // schema changes. A random password is generated for the account
-          // so the user doesn't need to provide one.
+          // Username-only signup: map username into the existing fullName field.
           fullName: fd.get('username'),
           email:    fd.get('email'),
-          password: generateRandomPassword()
         };
 
     const user = await signup(role, fields);
@@ -147,13 +144,16 @@ async function handleLogin(event) {
   const errBox = document.getElementById('loginError');
   errBox.classList.remove('show');
   try {
-    // Username-only login: find customer's email and send a magic link.
+    // Username-only login: find customer and sign them in locally (UI-only)
     if (activeLoginRole === 'customer') {
       const username = (fd.get('username') || '').trim();
       if (!username) throw new Error('Please enter your username.');
-      const { email } = await sendLoginLinkByUsername(username);
-      errBox.textContent = `Login link sent to ${email}. Check your inbox.`;
-      errBox.classList.add('show');
+      const userRow = await loginCustomerByUsername(username);
+      const currentUser = { role: 'customer', user: userRow };
+      window._currentUser = currentUser;
+      await loadUserData(userRow, 'customer');
+      showAppShell(currentUser);
+      playSplash(userRow, () => showPage('customer-dashboard'));
       event.target.reset();
       return;
     }
