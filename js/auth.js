@@ -109,6 +109,25 @@ async function loginCustomer({ email, password }) {
   return { ...snakeToCamel(customer), role: 'customer' };
 }
 
+/* ---------- PASSWORDLESS LOGIN HELPERS ---------- */
+// Send a magic login link to the customer matching the provided username.
+// We store the username in `full_name` so we look it up there.
+async function sendLoginLinkByUsername(username) {
+  if (!username) throw new Error('Username is required.');
+  const clean = String(username).trim();
+  const { data: customer, error } = await sb
+    .from('customers')
+    .select('email')
+    .ilike('full_name', clean)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!customer || !customer.email) throw new Error('No account found for that username.');
+
+  const { data, error: otpErr } = await sb.auth.signInWithOtp({ email: customer.email });
+  if (otpErr) throw new Error(otpErr.message || 'Failed to send login link.');
+  return { email: customer.email, data };
+}
+
 /* ---------- UNIFIED ENTRY POINTS ---------- */
 async function signup(role, fields) {
   if (role === 'garage')   return signupStore(fields);

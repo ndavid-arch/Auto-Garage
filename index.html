@@ -80,50 +80,15 @@
         </svg>
       </div>
       <h2 class="auth-title">Create an Account</h2>
-      <p class="auth-subtitle">Choose what kind of account you need.</p>
-
-      <!-- Role toggle -->
-      <div class="role-toggle" role="tablist">
-        <button type="button" class="role-tab active" data-role="garage" onclick="selectRole('signup','garage')">
-          🏭 I'm a Garage
-        </button>
-        <button type="button" class="role-tab" data-role="customer" onclick="selectRole('signup','customer')">
-          🚗 I'm a Car Owner
-        </button>
-      </div>
+      <p class="auth-subtitle">Create your Car Owner account. Only a username and email are required.</p>
 
       <div id="signupError" class="auth-error"></div>
 
-      <!-- GARAGE form -->
-      <form id="signupFormGarage" class="signup-form-role" data-role="garage" onsubmit="handleSignup(event,'garage')">
+      <!-- CUSTOMER form (only) -->
+      <form id="signupFormCustomer" class="signup-form-role" data-role="customer" onsubmit="handleSignup(event,'customer')">
         <div class="auth-field">
-          <label>Garage / Store Name *</label>
-          <input type="text" name="storeName" placeholder="e.g. Kigali Auto Repair" required/>
-        </div>
-        <div class="auth-field">
-          <label>Owner Name *</label>
-          <input type="text" name="ownerName" placeholder="Full name" required/>
-        </div>
-        <div class="auth-field">
-          <label>Email *</label>
-          <input type="email" name="email" placeholder="you@example.com" required/>
-        </div>
-        <div class="auth-field">
-          <label>Phone</label>
-          <input type="tel" name="phone" placeholder="+250 788 000 000"/>
-        </div>
-        <div class="auth-field">
-          <label>Password * (min 6 chars)</label>
-          <input type="password" name="password" placeholder="••••••••" required minlength="6"/>
-        </div>
-        <button type="submit" class="btn-primary btn-full" style="margin-top:6px;">Create Garage Account</button>
-      </form>
-
-      <!-- CUSTOMER form -->
-      <form id="signupFormCustomer" class="signup-form-role" data-role="customer" style="display:none;" onsubmit="handleSignup(event,'customer')">
-        <div class="auth-field">
-          <label>Your Full Name *</label>
-          <input type="text" name="fullName" placeholder="e.g. John Doe" required/>
+          <label>Username *</label>
+          <input type="text" name="username" placeholder="e.g. johndoe" required/>
         </div>
         <div class="auth-field">
           <label>Email *</label>
@@ -131,14 +96,6 @@
           <p style="font-size:11px;color:#64748b;margin:6px 0 0;">
             Use the same email your garage has on file — your cars will appear automatically.
           </p>
-        </div>
-        <div class="auth-field">
-          <label>Phone</label>
-          <input type="tel" name="phone" placeholder="+250 788 000 000"/>
-        </div>
-        <div class="auth-field">
-          <label>Password * (min 6 chars)</label>
-          <input type="password" name="password" placeholder="••••••••" required minlength="6"/>
         </div>
         <button type="submit" class="btn-primary btn-full" style="margin-top:6px;">Create Customer Account</button>
       </form>
@@ -158,31 +115,17 @@
         </svg>
       </div>
       <h2 class="auth-title">Welcome Back</h2>
-      <p class="auth-subtitle">Log in to your garage account.</p>
-
-      <!-- Role toggle -->
-      <div class="role-toggle" role="tablist">
-        <button type="button" class="role-tab active" data-role="garage" onclick="selectRole('login','garage')">
-          🏭 Garage
-        </button>
-        <button type="button" class="role-tab" data-role="customer" onclick="selectRole('login','customer')">
-          🚗 Car Owner
-        </button>
-      </div>
+      <p class="auth-subtitle">Log in with your username — we'll send a login link to your email.</p>
 
       <div id="loginError" class="auth-error"></div>
 
       <form id="loginForm" onsubmit="handleLogin(event)">
         <div class="auth-field">
-          <label>Email</label>
-          <input type="email" name="email" placeholder="you@example.com" required/>
-        </div>
-        <div class="auth-field">
-          <label>Password</label>
-          <input type="password" name="password" placeholder="••••••••" required/>
+          <label>Username</label>
+          <input type="text" name="username" placeholder="your username" required/>
         </div>
 
-        <button type="submit" class="btn-primary btn-full" style="margin-top:6px;">Log In</button>
+        <button type="submit" class="btn-primary btn-full" style="margin-top:6px;">Send Login Link</button>
       </form>
 
       <p style="text-align:center;margin:18px 0 0;font-size:13px;color:#64748b;">

@@ -3,8 +3,10 @@
    =========================================== */
 
 /* ---------- AUTH SHELL / APP SHELL TOGGLE ---------- */
-let activeSignupRole = 'garage';
-let activeLoginRole  = 'garage';
+// Default the UI to Car Owner only (customer) so landing/signup/login
+// show the customer flows by default.
+let activeSignupRole = 'customer';
+let activeLoginRole  = 'customer';
 
 function selectRole(form, role) {
   if (form === 'signup') {
@@ -105,6 +107,10 @@ async function handleSignup(event, role) {
   errBox.classList.remove('show');
 
   try {
+    function generateRandomPassword() {
+      return Math.random().toString(36).slice(2) + Date.now().toString(36).slice(-4);
+    }
+
     const fields = role === 'garage'
       ? {
           storeName: fd.get('storeName'),
@@ -114,10 +120,12 @@ async function handleSignup(event, role) {
           password:  fd.get('password')
         }
       : {
-          fullName: fd.get('fullName'),
+          // We treat the username as `fullName` in the DB model to avoid
+          // schema changes. A random password is generated for the account
+          // so the user doesn't need to provide one.
+          fullName: fd.get('username'),
           email:    fd.get('email'),
-          phone:    fd.get('phone') || '',
-          password: fd.get('password')
+          password: generateRandomPassword()
         };
 
     const user = await signup(role, fields);
@@ -138,8 +146,19 @@ async function handleLogin(event) {
   const fd = new FormData(event.target);
   const errBox = document.getElementById('loginError');
   errBox.classList.remove('show');
-
   try {
+    // Username-only login: find customer's email and send a magic link.
+    if (activeLoginRole === 'customer') {
+      const username = (fd.get('username') || '').trim();
+      if (!username) throw new Error('Please enter your username.');
+      const { email } = await sendLoginLinkByUsername(username);
+      errBox.textContent = `Login link sent to ${email}. Check your inbox.`;
+      errBox.classList.add('show');
+      event.target.reset();
+      return;
+    }
+
+    // Fallback for other roles (not shown in UI currently)
     const user = await login(activeLoginRole, {
       email:    fd.get('email'),
       password: fd.get('password')
